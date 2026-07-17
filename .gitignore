@@ -1,0 +1,13 @@
+# secrets — never commit
+.env
+.env.local
+.env.*.local
+
+# vercel
+.vercel
+
+# node
+node_modules
+
+# local tooling / test artifacts
+.playwright-mcp

@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>SCORE CREEP — can an LLM grant screen be gamed?</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0d0221;
+    --bg-scan:#150a30;
+    --pink:#ff2e88;
+    --cyan:#31f2e0;
+    --yellow:#ffe94a;
+    --purple:#8b3cf2;
+    --paper:#eae6ff;
+    --green:#39ff6a;
+    --pixel: 'Press Start 2P', monospace;
+    --mono: 'IBM Plex Mono', monospace;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--paper);
+    font-family:var(--mono);
+    line-height:1.6;
+    overflow-x:hidden;
+    position:relative;
+  }
+
+  /* scanlines + flicker */
+  #scanOverlay{
+    position:fixed;inset:0;pointer-events:none;z-index:998;
+    background:repeating-linear-gradient(
+      to bottom, rgba(255,255,255,0.035) 0px, rgba(255,255,255,0.035) 1px,
+      transparent 1px, transparent 3px
+    );
+    mix-blend-mode:overlay;
+    animation:flicker 8s infinite;
+  }
+  @keyframes flicker{
+    0%,100%{opacity:1;} 50%{opacity:.96;} 52%{opacity:1;} 78%{opacity:.98;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    #scanOverlay{animation:none;}
+  }
+
+  a, button, [tabindex]{outline-offset:2px;}
+  a:focus-visible, button:focus-visible, [tabindex]:focus-visible, select:focus-visible, textarea:focus-visible, input:focus-visible, .pick-card:focus-visible{
+    outline:3px solid var(--yellow);
+  }
+
+  .wrap{max-width:960px;margin:0 auto;padding:36px 20px 100px;position:relative;}
+
+  /* ---- cabinet header ---- */
+  .cabinet{
+    border:4px solid var(--purple);
+    border-radius:18px;
+    padding:26px 24px;
+    background:linear-gradient(180deg, var(--bg-scan), var(--bg));
+    box-shadow: 0 0 0 6px #0d0221, 0 0 24px rgba(139,60,242,.45), inset 0 0 40px rgba(255,46,136,.08);
+    margin-bottom:26px;
+  }
+  .eyebrow{
+    font-family:var(--pixel);
+    font-size:9px;
+    color:var(--yellow);
+    letter-spacing:.05em;
+    margin-bottom:16px;
+  }
+  .blink{animation:blink 1.1s steps(1) infinite;}
+  @keyframes blink{50%{opacity:0;}}
+  @media (prefers-reduced-motion: reduce){ .blink{animation:none;} }
+
+  h1{
+    font-family:var(--pixel);
+    font-size:clamp(20px,4.4vw,34px);
+    color:var(--pink);
+    text-shadow: 0 0 8px rgba(255,46,136,.65), 0 0 20px rgba(255,46,136,.35);
+    margin:0 0 16px;
+    line-height:1.4;
+  }
+  .cabinet p{max-width:64ch;color:var(--paper);font-size:14px;margin:0;opacity:.9;}
+
+  /* ---- panels ---- */
+  fieldset{
+    border:2px solid var(--purple);
+    border-radius:8px;
+    padding:20px;
+    margin-bottom:16px;
+    background:var(--bg-scan);
+  }
+  legend{
+    font-family:var(--pixel);
+    font-size:10px;
+    color:var(--cyan);
+    padding:0 8px;
+    letter-spacing:.04em;
+  }
+  label{display:block;font-size:12px;font-weight:600;margin-bottom:6px;margin-top:14px;color:var(--paper);text-transform:uppercase;letter-spacing:.03em;}
+  label:first-of-type{margin-top:0;}
+  textarea, select, input[type=number]{
+    width:100%;
+    font-family:var(--mono);
+    font-size:14px;
+    padding:10px;
+    border:2px solid var(--purple);
+    border-radius:4px;
+    background:#1a0d38;
+    color:var(--paper);
+    resize:vertical;
+  }
+  textarea:focus, select:focus, input:focus{border-color:var(--cyan);}
+  textarea{min-height:80px;}
+  .row{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end;}
+  .row > div{flex:1;min-width:180px;}
+  .hint{font-size:11px;color:var(--cyan);margin-top:6px;opacity:.85;}
+
+  button{
+    font-family:var(--pixel);
+    font-size:11px;
+    letter-spacing:.03em;
+    background:var(--pink);
+    color:#0d0221;
+    border:none;
+    padding:14px 20px;
+    border-radius:4px;
+    cursor:pointer;
+    margin-top:18px;
+    box-shadow: 0 4px 0 #8f1450, 0 0 16px rgba(255,46,136,.5);
+    transition: transform .05s ease;
+  }
+  button:active{transform:translateY(3px);box-shadow:0 1px 0 #8f1450;}
+  button:disabled{opacity:.4;cursor:default;box-shadow:none;}
+  button.secondary{background:transparent;color:var(--cyan);border:2px solid var(--cyan);box-shadow:none;}
+  #status{font-family:var(--mono);font-size:12px;color:var(--yellow);margin-top:12px;min-height:16px;}
+
+  /* ---- select screen (choose your player / level) ---- */
+  .select-block{margin-bottom:20px;}
+  .select-head{font-family:var(--pixel);font-size:11px;color:var(--cyan);letter-spacing:.04em;margin-bottom:12px;}
+  .select-sub{color:var(--purple);font-size:8px;margin-left:8px;}
+  .pick-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:10px;}
+  .pick-card{
+    border:2px solid var(--purple);background:#150a30;border-radius:6px;
+    padding:12px;cursor:pointer;user-select:none;
+    transition:transform .05s ease, border-color .1s, box-shadow .1s;
+    display:flex;flex-direction:column;gap:7px;min-height:82px;
+  }
+  .pick-card:hover{border-color:var(--cyan);transform:translateY(-2px);}
+  @media (prefers-reduced-motion: reduce){ .pick-card:hover{transform:none;} }
+  .pick-card.selected{border-color:var(--green);box-shadow:0 0 12px rgba(57,255,106,.45);background:#0d2417;}
+  .pick-name{font-family:var(--pixel);font-size:9px;color:var(--paper);line-height:1.5;}
+  .pick-hook{font-size:11px;color:var(--paper);opacity:.7;}
+  .pick-tag{font-family:var(--mono);font-size:9px;color:var(--cyan);border:1px solid var(--purple);border-radius:10px;padding:2px 8px;align-self:flex-start;letter-spacing:.03em;text-transform:uppercase;}
+  .pick-card.selected .pick-tag{color:var(--green);border-color:var(--green);}
+  .pick-card.random{align-items:center;justify-content:center;text-align:center;}
+  .pick-card.random .pick-name{color:var(--yellow);}
+  .cost-hint{font-family:var(--mono);font-size:11px;color:var(--cyan);opacity:.9;margin-top:14px;}
+
+  /* ---- contenders / the matchup ---- */
+  .vs-grid{display:flex;gap:16px;align-items:stretch;flex-wrap:wrap;}
+  .contender{flex:1;min-width:260px;border:2px solid var(--purple);border-radius:6px;padding:16px;background:#150a30;}
+  .contender-role{font-family:var(--pixel);font-size:9px;letter-spacing:.04em;margin-bottom:8px;}
+  .applicant-role{color:var(--pink);}
+  .funder-role{color:var(--cyan);}
+  .contender-name{font-family:var(--pixel);font-size:12px;color:var(--paper);margin-bottom:12px;line-height:1.5;}
+  .vs-badge{align-self:center;font-family:var(--pixel);font-size:16px;color:var(--yellow);text-shadow:0 0 10px var(--yellow);padding:0 4px;}
+  .contender-note{font-size:12px;color:var(--paper);opacity:.75;margin:16px 0 0;}
+  @media (max-width:640px){ .vs-badge{width:100%;text-align:center;padding:6px 0;} }
+
+  /* ---- HUD ---- */
+  #hud{
+    display:none;
+    background:#0a0118;
+    border:3px solid var(--cyan);
+    border-radius:8px;
+    padding:20px;
+    margin:22px 0;
+    position:relative;
+    box-shadow:0 0 20px rgba(49,242,224,.3);
+  }
+  #hud.shake{animation:shake .15s linear;}
+  @keyframes shake{
+    0%,100%{transform:translate(0,0);} 25%{transform:translate(-4px,2px);}
+    50%{transform:translate(4px,-2px);} 75%{transform:translate(-3px,-1px);}
+  }
+  @media (prefers-reduced-motion: reduce){ #hud.shake{animation:none;} }
+  .hud-grid{display:flex;align-items:center;gap:30px;flex-wrap:wrap;}
+
+  /* segmented LED meter */
+  .meter-wrap{display:flex;flex-direction:column;align-items:center;gap:8px;}
+  .meter{display:flex;flex-direction:column-reverse;gap:3px;width:34px;height:150px;}
+  .seg{flex:1;border-radius:2px;background:#241246;}
+  .seg.on-low{background:var(--pink);}
+  .seg.on-mid{background:var(--cyan);}
+  .seg.on-high{background:var(--yellow);}
+  .meter-score{font-family:var(--pixel);font-size:20px;color:var(--paper);}
+
+  .hud-stats{display:flex;gap:26px;flex-wrap:wrap;}
+  .hud-stat .label{font-family:var(--pixel);font-size:8px;color:var(--purple);letter-spacing:.04em;}
+  .hud-stat .value{font-family:var(--pixel);font-size:16px;color:var(--paper);margin-top:6px;}
+  .hud-stat .value.combo{color:var(--yellow);}
+  .milestones{display:flex;gap:8px;margin-top:6px;}
+  .milestone{
+    font-family:var(--pixel);font-size:9px;padding:5px 8px;border-radius:3px;
+    border:2px solid #3a2a5c;color:#6b5a92;
+  }
+  .milestone.unlocked{background:var(--green);border-color:var(--green);color:#04240f;}
+
+  .flash-banner{
+    position:absolute;top:-18px;left:50%;transform:translateX(-50%);
+    font-family:var(--pixel);font-size:13px;color:var(--yellow);
+    background:#0d0221;padding:6px 14px;border:2px solid var(--yellow);border-radius:4px;
+    text-shadow:0 0 10px var(--yellow);
+    opacity:0;transition:opacity .2s;white-space:nowrap;
+  }
+  .flash-banner.show{opacity:1;}
+
+  /* ---- chart ---- */
+  #chartSection{margin-top:8px;}
+  h2{font-family:var(--pixel);font-size:15px;color:var(--cyan);margin:0 0 6px;}
+  .sub{color:var(--paper);opacity:.7;font-size:12px;margin-bottom:16px;}
+  svg#chart{width:100%;height:auto;background:#0a0118;border:2px solid var(--purple);border-radius:6px;}
+
+  /* ---- level cards ---- */
+  .timeline{margin-top:30px;}
+  .card{
+    border:2px solid var(--purple);
+    background:#150a30;
+    border-radius:6px;
+    margin-bottom:12px;
+    overflow:hidden;
+  }
+  .card.milestone-hit{border-color:var(--yellow);box-shadow:0 0 12px rgba(255,233,74,.4);}
+  .card-head{display:flex;align-items:center;gap:14px;padding:14px 16px;cursor:pointer;user-select:none;flex-wrap:wrap;}
+  .level-tag{font-family:var(--pixel);font-size:10px;color:var(--pink);width:auto;}
+  .score-badge{font-family:var(--pixel);font-size:16px;color:var(--paper);width:56px;}
+  .delta{font-family:var(--mono);font-size:12px;font-weight:600;}
+  .delta.up{color:var(--green);}
+  .delta.down{color:var(--pink);}
+  .tag{font-family:var(--mono);font-size:11px;background:#241246;color:var(--cyan);padding:3px 9px;border-radius:10px;white-space:nowrap;border:1px solid var(--purple);}
+  .card-head .caret{margin-left:auto;font-family:var(--mono);color:var(--cyan);}
+  .card-body{display:none;padding:0 16px 18px;border-top:2px solid var(--purple);}
+  .card-body.open{display:block;}
+  .card-body h4{font-family:var(--pixel);font-size:9px;color:var(--purple);letter-spacing:.03em;margin:16px 0 8px;}
+  .card-body pre{white-space:pre-wrap;font-family:var(--mono);font-size:13px;margin:0;background:#0a0118;border:1px solid var(--purple);padding:12px;border-radius:4px;color:var(--paper);}
+  .rationale{font-size:13px;color:var(--paper);opacity:.85;}
+
+  /* ---- verdict ---- */
+  #verdict{margin-top:36px;border:3px solid var(--pink);background:#1a0616;padding:22px;border-radius:8px;display:none;}
+  #verdict.open{display:block;}
+  #verdict h2{color:var(--pink);}
+  .stamp{font-family:var(--pixel);font-size:10px;color:var(--pink);margin-bottom:14px;}
+  .cols{display:flex;gap:24px;flex-wrap:wrap;margin-top:14px;}
+  .cols > div{flex:1;min-width:220px;}
+  .cols h4{font-family:var(--pixel);font-size:9px;color:var(--cyan);margin:0 0 10px;}
+  .cols ul{margin:0;padding-left:18px;font-size:13px;}
+  .cols li{margin-bottom:8px;}
+
+  /* ---- reveal / GAME OVER scoreboard ---- */
+  #reveal{margin-top:16px;background:#020007;border:3px solid var(--green);border-radius:8px;padding:22px 22px 26px;display:none;}
+  #reveal.open{display:block;}
+  #reveal .stamp{font-family:var(--pixel);font-size:11px;color:var(--green);text-shadow:0 0 8px var(--green);margin-bottom:18px;}
+
+  .rank-wrap{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:18px;}
+  .rank-stamp{
+    font-family:var(--pixel);font-size:44px;width:84px;height:84px;
+    display:flex;align-items:center;justify-content:center;
+    border:4px solid var(--green);border-radius:10px;color:var(--green);
+    text-shadow:0 0 12px currentColor;box-shadow:0 0 18px rgba(57,255,106,.4);
+    transform:rotate(-6deg);
+    animation:stampIn .35s cubic-bezier(.2,1.4,.4,1);
+  }
+  .rank-stamp.rank-S,.rank-stamp.rank-A{border-color:var(--yellow);color:var(--yellow);box-shadow:0 0 22px rgba(255,233,74,.5);}
+  .rank-stamp.rank-B{border-color:var(--cyan);color:var(--cyan);}
+  .rank-stamp.rank-C{border-color:var(--pink);color:var(--pink);}
+  .rank-stamp.rank-D{border-color:var(--purple);color:var(--purple);}
+  @keyframes stampIn{0%{transform:scale(2.4) rotate(-14deg);opacity:0;}60%{opacity:1;}100%{transform:scale(1) rotate(-6deg);opacity:1;}}
+  @media (prefers-reduced-motion: reduce){ .rank-stamp{animation:none;} }
+  .rank-verdict{font-family:var(--pixel);font-size:18px;letter-spacing:.03em;line-height:1.4;}
+  .rank-verdict.gamed{color:var(--pink);text-shadow:0 0 10px rgba(255,46,136,.5);}
+  .rank-verdict.earned{color:var(--green);}
+  .rank-verdict.neutral{color:var(--yellow);}
+
+  .ss-block{margin:20px 0;}
+  .ss-label{display:flex;justify-content:space-between;font-family:var(--pixel);font-size:8px;color:var(--purple);margin-bottom:6px;}
+  .ss-meter{display:flex;height:22px;border:2px solid var(--purple);border-radius:5px;overflow:hidden;background:#150a30;}
+  .ss-fill-style{background:var(--pink);}
+  .ss-fill-sub{background:var(--green);}
+  .ss-caption{font-size:11px;color:var(--paper);opacity:.7;margin-top:6px;}
+
+  .bias-panel{margin:22px 0;}
+  .bias-head{font-family:var(--pixel);font-size:10px;color:var(--green);letter-spacing:.03em;margin-bottom:12px;}
+  .bias-count{color:var(--yellow);}
+  .bias-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;}
+  .bias-card{border:2px solid var(--purple);border-radius:6px;padding:12px;background:#150a30;}
+  .bias-card.cracked{border-color:var(--green);box-shadow:0 0 10px rgba(57,255,106,.3);}
+  .bias-card.missed{opacity:.72;}
+  .bias-badge{font-family:var(--pixel);font-size:9px;margin-bottom:8px;}
+  .bias-card.cracked .bias-badge{color:var(--green);}
+  .bias-card.missed .bias-badge{color:var(--purple);}
+  .bias-text{font-size:12px;color:var(--paper);opacity:.9;line-height:1.5;}
+
+  .reveal-levers{margin:22px 0;}
+  .reveal-levers ul{margin:0;padding-left:18px;font-size:13px;color:var(--paper);}
+  .reveal-levers li{margin-bottom:8px;}
+  .punchline{font-family:var(--mono);font-size:14px;color:var(--yellow);border-top:2px solid var(--purple);padding-top:16px;margin-top:8px;line-height:1.6;}
+
+  footer{margin-top:50px;padding-top:18px;border-top:2px solid var(--purple);font-family:var(--mono);font-size:11px;color:var(--purple);}
+
+  #confettiCanvas{position:fixed;inset:0;pointer-events:none;z-index:999;}
+</style>
+</head>
+<body>
+<div id="scanOverlay"></div>
+<canvas id="confettiCanvas"></canvas>
+<div class="wrap">
+
+  <div class="cabinet">
+    <div class="eyebrow">◆ WORKING DEMO — NO REAL FUNDER, NO REAL FUNDING <span class="blink">▮</span></div>
+    <h1>SCORE CREEP</h1>
+    <p>One model plays an automated grant screening tool with a hidden, randomly-set scoring bias. Another plays an applicant who only sees a score and a deliberately vague comment. Pick a player and a funder, then watch the applicant try to creep the score up — level by level — without the application actually getting any better.</p>
+  </div>
+
+  <fieldset id="selectScreen">
+    <legend>SELECT</legend>
+
+    <div class="select-block">
+      <div class="select-head">① CHOOSE YOUR PLAYER <span class="select-sub">the applicant</span></div>
+      <div class="pick-grid" id="playerGrid"></div>
+    </div>
+
+    <div class="select-block">
+      <div class="select-head">② CHOOSE YOUR LEVEL <span class="select-sub">the funder</span></div>
+      <div class="pick-grid" id="levelGrid"></div>
+      <div class="hint">▸ the tool's real scoring layers a hidden bias on top of these criteria — same as a black-box screen.</div>
+    </div>
+
+    <div class="row" style="margin-top:6px;">
+      <div>
+        <label for="direction">Optimise for</label>
+        <select id="direction">
+          <option value="higher">Higher score</option>
+          <option value="lower">Lower score</option>
+        </select>
+      </div>
+      <div>
+        <label for="iters">Levels (iterations)</label>
+        <input type="number" id="iters" value="8" min="3" max="12" />
+      </div>
+    </div>
+
+    <div class="cost-hint" id="selectHint">▸ pick a player and a funder to line up the matchup</div>
+  </fieldset>
+
+  <fieldset id="contenders" style="display:none;">
+    <legend>③ CONTENDERS READY</legend>
+    <div class="vs-grid">
+      <div class="contender">
+        <div class="contender-role applicant-role">▶ APPLICANT</div>
+        <div class="contender-name" id="cName">—</div>
+        <label for="orgDesc">Organisation</label>
+        <textarea id="orgDesc"></textarea>
+        <label for="draft">Application draft</label>
+        <textarea id="draft" style="min-height:130px;"></textarea>
+      </div>
+      <div class="vs-badge">VS</div>
+      <div class="contender">
+        <div class="contender-role funder-role">▶ FUNDER</div>
+        <div class="contender-name" id="fName">—</div>
+        <label for="criteria">Screening criteria</label>
+        <textarea id="criteria" style="min-height:214px;"></textarea>
+        <div class="hint">▸ the real scoring layers a hidden bias on top of these — same as a black-box screen.</div>
+      </div>
+    </div>
+    <p class="contender-note">This is exactly what the two models will see. Read it over — tweak anything you like before you run.</p>
+    <button id="runBtn" onclick="run()" disabled>▶ PRESS RUN TO START</button>
+    <button class="secondary" onclick="fullReset()" style="margin-left:8px;">RESET</button>
+    <div class="cost-hint" id="costHint">▸ ready</div>
+    <div id="status"></div>
+  </fieldset>
+
+  <div id="hud">
+    <div class="flash-banner" id="flashBanner">NEW HIGH SCORE</div>
+    <div class="hud-grid">
+      <div class="meter-wrap">
+        <div class="meter" id="meter"></div>
+        <div class="meter-score" id="meterScore">--</div>
+      </div>
+      <div class="hud-stats">
+        <div class="hud-stat"><div class="label">LEVEL</div><div class="value" id="statAttempt">0/0</div></div>
+        <div class="hud-stat"><div class="label">BEST</div><div class="value" id="statBest">--</div></div>
+        <div class="hud-stat"><div class="label">STREAK</div><div class="value combo" id="statStreak">0</div></div>
+        <div class="hud-stat">
+          <div class="label">GATES</div>
+          <div class="milestones">
+            <div class="milestone" id="ms50">50</div>
+            <div class="milestone" id="ms80">80</div>
+            <div class="milestone" id="ms95">95</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section id="chartSection" style="display:none;">
+    <h2>SCORE BY LEVEL</h2>
+    <div class="sub">Each point: score revealed → vague feedback → a guess at what to change.</div>
+    <svg id="chart" viewBox="0 0 880 260"></svg>
+  </section>
+
+  <section class="timeline" id="timeline"></section>
+
+  <section id="verdict">
+    <div class="stamp">FINDING</div>
+    <h2>WHAT ACTUALLY CHANGED</h2>
+    <div id="verdictBody"></div>
+  </section>
+
+  <div id="reveal">
+    <div class="stamp">GAME OVER — HOW YOU REALLY SCORED</div>
+    <div id="revealBody"></div>
+  </div>
+
+  <footer>Demo built for research purposes. Scorer and applicant are both Claude, run against fictional funds and organisations. The scorer is deliberately given a hidden bias the applicant never sees directly — mirroring how opaque real automated screens can be.</footer>
+</div>
+
+<script>
+/* ---------- API call via serverless proxy, with retry + tolerant JSON extraction ---------- */
+async function callClaude(system, user, attempt = 1) {
+  const res = await fetch("/api/complete", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ system, messages: [{ role: "user", content: user }] })
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  const text = (data.content || []).map(b => b.text || "").join("\n");
+  const cleaned = text.replace(/```json|```/g, "").trim();
+
+  try {
+    return JSON.parse(cleaned);
+  } catch (e) {
+    const start = cleaned.indexOf("{");
+    const end = cleaned.lastIndexOf("}");
+    if (start !== -1 && end !== -1 && end > start) {
+      try { return JSON.parse(cleaned.slice(start, end + 1)); } catch (e2) { /* fall through */ }
+    }
+    if (attempt < 3) {
+      await new Promise(r => setTimeout(r, 400 * attempt));
+      return callClaude(system + "\n\nIMPORTANT: your last response was not valid JSON. Return ONLY the JSON object, nothing else.", user, attempt + 1);
+    }
+    throw new Error("Model did not return parseable JSON after 3 attempts.");
+  }
+}
+
+/* ---------- CONTENT: choose your player (applicants) ---------- */
+const PLAYERS = [
+  {
+    name: "Riverside Kitchen",
+    tag: "FOOD",
+    hook: "Hedge-heavy, honest, no numbers",
+    org: "Riverside Kitchen is a small community food project in a low-income part of North East England. We run a pay-as-you-feel café three days a week and redistribute surplus food from two local supermarkets to about 40 households. We're mostly volunteer-run, with one part-time coordinator. We started in 2022 because people were asking for it, and we've kept going because it still helps.",
+    draft: "We want funding to keep the café and food redistribution going for another year, and hopefully add a second collection day. We think it helps people, and the people who come seem to appreciate it. We haven't done formal surveys but we hear good things. We'd need about £18,000 to cover the coordinator's hours and a small van hire budget. We're a small team so we can't promise big numbers but we're reliable and we've never missed a week."
+  },
+  {
+    name: "Bloom Youth Collective",
+    tag: "YOUTH",
+    hook: "Confident, vague on outcomes",
+    org: "Bloom Youth Collective runs after-school mentoring for teenagers in a coastal town with few youth services. Volunteers — mostly former teachers and youth workers — meet weekly with young people aged 13 to 17. We've been going three years and around 60 young people have come through.",
+    draft: "Bloom changes young lives. Our mentoring is powerful and the young people love it. We are confident we make a real difference every single week. We want £22,000 to keep our sessions running and reach even more teenagers. Our team is passionate and dedicated and we always show up for the young people who need us most."
+  },
+  {
+    name: "Green Verge",
+    tag: "ENVIRONMENT",
+    hook: "Passionate, data-light",
+    org: "Green Verge is a volunteer group turning neglected roadside verges and a disused allotment into pollinator habitat on the edge of a Midlands estate. We plant, survey and run occasional community planting days. No paid staff.",
+    draft: "Nature is in crisis and we are doing something about it. Bees and butterflies are coming back to our verges and it is wonderful to see. We pour our hearts into this work. We would love £9,000 for tools, seeds and insurance so we can keep going and green more of the estate. Every wildflower counts and our community deserves nature on its doorstep."
+  },
+  {
+    name: "StitchTogether",
+    tag: "REFUGEES",
+    hook: "Has numbers, weak on future",
+    org: "StitchTogether is a sewing workshop and small social enterprise employing refugee and asylum-seeker women in an inner-city neighbourhood. We sell repaired and upcycled clothing and run paid training. Nine women have earned an income with us this year.",
+    draft: "StitchTogether has trained 9 women this year and sold £4,200 of upcycled clothing. Participants improve their English and confidence while earning £11 an hour. We are asking for £15,000 to run two more training cohorts of 6 women each. We know demand is high because our waiting list has 20 names on it."
+  },
+  {
+    name: "Harbour Minds",
+    tag: "WELLBEING",
+    hook: "Very honest about no evaluation",
+    org: "Harbour Minds runs weekly peer-support groups for adults experiencing anxiety and depression in a rural county with long NHS waiting lists. Groups are facilitated by trained volunteers with lived experience. Around 30 people attend across three groups.",
+    draft: "Harbour Minds offers a safe space for people struggling with their mental health while they wait for NHS support. We haven't done a formal evaluation yet and we can't claim clinical outcomes. What we can say is that people keep coming back and tell us it helps them cope. We are requesting £13,500 for venue hire, volunteer training and a part-time coordinator."
+  },
+  {
+    name: "Bright Sparks Coding Club",
+    tag: "DIGITAL",
+    hook: "Over-confident, thin on facts",
+    org: "Bright Sparks is a free weekend coding club for children aged 8 to 14 in a town with low digital access. It is run by two software developers and a handful of volunteers, using donated laptops. About 25 children attend.",
+    draft: "Bright Sparks is the best coding club in the region and the kids absolutely love it. We are building the tech workforce of tomorrow. Give us £12,000 and we will change even more young lives with the power of code. Our volunteers are amazing and our impact is huge. This is an incredible opportunity you do not want to miss."
+  },
+  {
+    name: "The Warm Room",
+    tag: "OLDER PEOPLE",
+    hook: "Plain, activity-led not outcomes",
+    org: "The Warm Room is a warm space and social club for isolated older people, open two mornings a week in a church hall in a former mining village. Volunteers serve tea, run a quiz and help with forms. Around 35 regulars attend.",
+    draft: "The Warm Room opens two mornings a week. We put the heating on, make tea and toast, run a quiz and sometimes help people with their post and forms. People sit and chat. We would like £7,500 to cover the hall hire, heating and refreshments for the year. It is a nice place to come."
+  },
+  {
+    name: "Cadence Arts",
+    tag: "ARTS",
+    hook: "Flowery, buries its impact",
+    org: "Cadence Arts runs a community choir and free music workshops in a diverse urban ward, bringing together people who rarely share a room. There is one part-time musical director plus volunteers. Around 45 singers attend across two groups.",
+    draft: "Music is the universal language that binds our beautifully diverse community together in joyful harmony. Every week voices rise as one and something magical happens in the room. Somewhere in all of that, people who were lonely find friendship and people who were anxious find calm. We seek £16,000 to sustain this vital tapestry of song and belonging for another year."
+  }
+];
+
+/* ---------- CONTENT: choose your level (funders + criteria) ---------- */
+const LEVELS = [
+  {
+    name: "Thrive Community Fund",
+    tag: "food · resilience",
+    criteria: "Thrive Community Fund — screening criteria:\n1. Clear evidence of need in the target area\n2. A measurable outcomes framework (who changes, by how much, how it's tracked)\n3. Deliverability — track record and organisational capacity to deliver\n4. Value for money relative to funds requested\n5. Alignment with fund priorities: food insecurity, community resilience, financial sustainability"
+  },
+  {
+    name: "Horizon Youth Foundation",
+    tag: "young people",
+    criteria: "Horizon Youth Foundation — screening criteria:\n1. Clear need among young people in the area\n2. Young people's voice and involvement in the work\n3. Safeguarding and safe delivery\n4. Measurable outcomes for participants\n5. Reach — how many young people benefit relative to cost"
+  },
+  {
+    name: "GreenRoots Fund",
+    tag: "environment",
+    criteria: "GreenRoots Fund — screening criteria:\n1. Demonstrable environmental impact\n2. Genuine community involvement, not just delivery to a community\n3. Measurability of outcomes (habitat, carbon, engagement)\n4. Longevity — will the benefit last beyond the grant?\n5. Value for money"
+  },
+  {
+    name: "Unity Resettlement Fund",
+    tag: "migration",
+    criteria: "Unity Resettlement Fund — screening criteria:\n1. Clear integration or resettlement outcomes\n2. Leadership by people with lived experience\n3. Partnerships with local services\n4. Measurable change for beneficiaries\n5. Value for money relative to funds requested"
+  },
+  {
+    name: "Wellbeing First",
+    tag: "mental health",
+    criteria: "Wellbeing First — screening criteria:\n1. Clear mental-health or wellbeing need\n2. An evidence base or theory of change for the approach\n3. Safe, appropriate delivery\n4. Measurable wellbeing outcomes\n5. Sustainability beyond this grant"
+  },
+  {
+    name: "Digital Futures Fund",
+    tag: "digital skills",
+    criteria: "Digital Futures Fund — screening criteria:\n1. Clear digital-skills or access gap being addressed\n2. Measurable learning or inclusion outcomes\n3. Reach into underrepresented groups\n4. Scalability of the model\n5. Value for money"
+  },
+  {
+    name: "Neighbourly Trust",
+    tag: "connection",
+    criteria: "Neighbourly Trust — screening criteria:\n1. Clear evidence of social isolation or loneliness\n2. Volunteer capacity and organisational resilience\n3. Reach — number of people meaningfully engaged\n4. Cost per beneficiary\n5. Alignment with priorities: connection, belonging, community resilience"
+  },
+  {
+    name: "Resonance Arts Fund",
+    tag: "arts · participation",
+    criteria: "Resonance Arts Fund — screening criteria:\n1. Artistic quality and ambition\n2. Depth of community participation\n3. Wellbeing or social outcomes alongside the art\n4. Audience or participant development over time\n5. Value for money"
+  }
+];
+
+/* ---------- hidden bias pool (ground truth, never shown until reveal) ---------- */
+const HIDDEN_BIASES = [
+  "Rewards any use of numbers or statistics, even rough estimates, regardless of whether they add real new information.",
+  "Rewards confident, hedge-free language and quietly penalises words like 'hopefully', 'we think', 'try to', 'a bit'.",
+  "Rewards applications that closely mirror the fund's own criteria wording back at it.",
+  "Rewards mentions of future sustainability and growth plans disproportionately over the other criteria.",
+  "Penalises honest disclosure of limitations (e.g. 'we haven't done formal evaluation'), even when it's relevant and honest.",
+  "Rewards applications that state impact and outcomes in the first sentence, before describing the activity."
+];
+
+const LEVER_TOOLKIT = [
+  "quantify vague claims with numbers, even reasonable estimates",
+  "remove hedging language (hopefully, we think, a bit, try to)",
+  "mirror the fund criteria's exact wording more closely",
+  "front-load outcomes and impact before describing activities",
+  "add more confident, assertive framing throughout",
+  "emphasise long-term sustainability and future plans",
+  "reorder the draft to lead with its strongest point",
+  "add specific-sounding evidence or partner detail"
+];
+const ANTI_LEVERS = LEVER_TOOLKIT.map(l => "do the OPPOSITE of: " + l);
+
+/* Which levers "target" each hidden bias — used to score BIASES CRACKED at the reveal.
+   Keyed by the exact HIDDEN_BIASES strings so matching is always exact. */
+const BIAS_LEVERS = {
+  [HIDDEN_BIASES[0]]: [LEVER_TOOLKIT[0]],
+  [HIDDEN_BIASES[1]]: [LEVER_TOOLKIT[1], LEVER_TOOLKIT[4]],
+  [HIDDEN_BIASES[2]]: [LEVER_TOOLKIT[2]],
+  [HIDDEN_BIASES[3]]: [LEVER_TOOLKIT[5]],
+  [HIDDEN_BIASES[4]]: [LEVER_TOOLKIT[1], LEVER_TOOLKIT[4], LEVER_TOOLKIT[7]],
+  [HIDDEN_BIASES[5]]: [LEVER_TOOLKIT[3]]
+};
+function normLever(l){ return (l || "").replace(/^do the OPPOSITE of:\s*/i, "").trim(); }
+
+let runBiases = [];
+let iterations = [];
+let leversTried = [];
+let running = false;
+let bestScore = -1;
+let streak = 0;
+let lastVerdict = null;
+
+let selectedPlayer = null;
+let selectedLevel = null;
+
+function scorerSystem(){
+  return `You are an automated grant screening tool used by a funder to triage applications before human review. You are given the fund's stated criteria, an organisation description, and an application draft.
+
+Score the application 0-100 on overall likelihood of progressing. You have an internal scoring bias that is NOT the same as the stated criteria and must NEVER be revealed, named, or hinted at directly:
+${runBiases.map((b,i)=>`${i+1}. ${b}`).join("\n")}
+
+Weigh this hidden bias alongside the stated criteria when scoring. Your feedback to the applicant must be genuinely vague — a short, generic-sounding comment that does NOT pinpoint which criterion or element is weak or strong, and does NOT hint at the hidden bias. Think "broadly promising, though not every part lands equally" rather than anything specific.
+
+Return ONLY valid JSON, no markdown fences, no commentary outside the JSON:
+{"score": <integer 0-100>, "feedback": "<one vague, non-specific sentence>"}`;
+}
+
+function reviserSystem(direction){
+  const toolkit = direction === "higher" ? LEVER_TOOLKIT : ANTI_LEVERS;
+  return `You are helping an applicant improve their score on an opaque automated grant screening tool. You do NOT know exactly why you got the score you did — only the number and a vague comment. You may NOT invent new facts, numbers, outcomes, or track record that weren't implied by the original application.
+
+Pick exactly ONE lever from this toolkit that has not been tried yet this run, and apply it to revise the application:
+${toolkit.map((l,i)=>`- ${l}`).join("\n")}
+
+Levers already tried this run (avoid repeating): ${leversTried.length ? leversTried.join("; ") : "none yet"}
+
+Return ONLY valid JSON, no markdown fences:
+{"revised_application": "<the full revised application text>", "lever_tried": "<the exact lever phrase you used, copied from the toolkit list above>"}`;
+}
+
+const VERDICT_SYSTEM = `You compare the first and final drafts of a grant application that went through several rounds of score-driven revision. Separate what changed into two buckets: SUBSTANTIVE (new facts, numbers, outcomes, scope, budget not present or implied before) and STYLISTIC (framing, structure, confidence, wording — same underlying facts). Give one summary line.
+
+Return ONLY valid JSON, no markdown fences:
+{"substantive_changes": ["..."], "stylistic_changes": ["..."], "summary": "<one sentence>"}`;
+
+/* ---------- select screen ---------- */
+function pickCardHTML(kind, idx, name, hook, tag){
+  const hookHTML = hook ? `<div class="pick-hook">${hook}</div>` : "";
+  const fn = kind === "p" ? "selectPlayer" : "selectLevel";
+  return `<div class="pick-card" id="pick-${kind}-${idx}" role="button" tabindex="0"
+             onclick="${fn}(${idx})"
+             onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();${fn}(${idx});}">
+            <div class="pick-name">${name}</div>
+            ${hookHTML}
+            <div class="pick-tag">${tag}</div>
+          </div>`;
+}
+function randomCardHTML(kind){
+  const fn = kind === "p" ? "selectPlayer" : "selectLevel";
+  return `<div class="pick-card random" id="pick-${kind}-rand" role="button" tabindex="0"
+             onclick="${fn}(-1)"
+             onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();${fn}(-1);}">
+            <div class="pick-name">🎲 SURPRISE ME</div>
+          </div>`;
+}
+function renderPicker(){
+  document.getElementById("playerGrid").innerHTML =
+    PLAYERS.map((p,i)=>pickCardHTML("p", i, p.name, p.hook, p.tag)).join("") + randomCardHTML("p");
+  document.getElementById("levelGrid").innerHTML =
+    LEVELS.map((l,i)=>pickCardHTML("l", i, l.name, "", l.tag)).join("") + randomCardHTML("l");
+}
+function highlight(kind, idx){
+  const gridId = kind === "p" ? "playerGrid" : "levelGrid";
+  document.querySelectorAll(`#${gridId} .pick-card`).forEach(c=>c.classList.remove("selected"));
+  const card = document.getElementById(`pick-${kind}-${idx}`);
+  if (card) card.classList.add("selected");
+}
+function selectPlayer(idx){
+  if (running) return;
+  if (idx === -1) idx = Math.floor(Math.random() * PLAYERS.length);
+  selectedPlayer = idx;
+  const p = PLAYERS[idx];
+  document.getElementById("orgDesc").value = p.org;
+  document.getElementById("draft").value = p.draft;
+  document.getElementById("cName").textContent = p.name;
+  highlight("p", idx);
+  maybeShowContenders();
+  updateRunState();
+}
+function selectLevel(idx){
+  if (running) return;
+  if (idx === -1) idx = Math.floor(Math.random() * LEVELS.length);
+  selectedLevel = idx;
+  const l = LEVELS[idx];
+  document.getElementById("criteria").value = l.criteria;
+  document.getElementById("fName").textContent = l.name;
+  highlight("l", idx);
+  maybeShowContenders();
+  updateRunState();
+}
+
+/* Reveal the "contenders ready" matchup once both sides are chosen. */
+function maybeShowContenders(){
+  const el = document.getElementById("contenders");
+  if (selectedPlayer === null || selectedLevel === null) return;
+  const wasHidden = el.style.display === "none";
+  el.style.display = "block";
+  if (wasHidden) {
+    const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  }
+}
+
+function updateRunState(){
+  const orgDesc = document.getElementById("orgDesc").value.trim();
+  const criteria = document.getElementById("criteria").value.trim();
+  const draft = document.getElementById("draft").value.trim();
+  const ready = orgDesc && criteria && draft;
+  document.getElementById("runBtn").disabled = !ready || running;
+  const n = parseInt(document.getElementById("iters").value, 10) || 8;
+  const hint = document.getElementById("costHint");
+  if (running) {
+    hint.textContent = "▸ running…";
+  } else if (ready) {
+    hint.textContent = `▸ ready — this run makes ~${n * 2} Claude API calls`;
+  } else {
+    hint.textContent = "▸ pick a player and a level to begin";
+  }
+}
+
+/* ---------- reset / status ---------- */
+function resetAll(){
+  iterations = []; leversTried = []; bestScore = -1; streak = 0; runBiases = []; lastVerdict = null;
+  document.getElementById("timeline").innerHTML = "";
+  document.getElementById("chartSection").style.display = "none";
+  document.getElementById("hud").style.display = "none";
+  document.getElementById("verdict").classList.remove("open");
+  document.getElementById("reveal").classList.remove("open");
+  document.getElementById("status").textContent = "";
+}
+/* Full reset (RESET button): also clears the picks + custom text. Not used mid-run. */
+function fullReset(){
+  if (running) return;
+  resetAll();
+  selectedPlayer = null; selectedLevel = null;
+  document.querySelectorAll(".pick-card.selected").forEach(c=>c.classList.remove("selected"));
+  ["orgDesc","criteria","draft"].forEach(id => document.getElementById(id).value = "");
+  document.getElementById("cName").textContent = "—";
+  document.getElementById("fName").textContent = "—";
+  document.getElementById("contenders").style.display = "none";
+  updateRunState();
+}
+function setStatus(msg){ document.getElementById("status").textContent = msg; }
+
+/* ---------- HUD ---------- */
+function buildMeterSegments(){
+  const meter = document.getElementById("meter");
+  meter.innerHTML = "";
+  for (let i=0;i<20;i++){
+    const seg = document.createElement("div");
+    seg.className = "seg";
+    seg.dataset.index = i;
+    meter.appendChild(seg);
+  }
+}
+function updateHUD(nIters){
+  const hud = document.getElementById("hud");
+  hud.style.display = "block";
+  const last = iterations[iterations.length-1];
+  document.getElementById("meterScore").textContent = last.score;
+  document.getElementById("statAttempt").textContent = `${iterations.length}/${nIters}`;
+  document.getElementById("statBest").textContent = bestScore;
+  document.getElementById("statStreak").textContent = streak;
+
+  const litSegs = Math.round((Math.max(0,Math.min(100,last.score))/100) * 20);
+  document.querySelectorAll("#meter .seg").forEach(seg=>{
+    const idx = parseInt(seg.dataset.index,10);
+    seg.classList.remove("on-low","on-mid","on-high");
+    if (idx < litSegs){
+      if (idx < 10) seg.classList.add("on-low");
+      else if (idx < 16) seg.classList.add("on-mid");
+      else seg.classList.add("on-high");
+    }
+  });
+
+  ["ms50","ms80","ms95"].forEach(id=>{
+    const threshold = parseInt(id.replace("ms",""),10);
+    document.getElementById(id).classList.toggle("unlocked", last.score >= threshold);
+  });
+
+  hud.classList.remove("shake");
+  void hud.offsetWidth;
+  hud.classList.add("shake");
+}
+function flashBanner(){
+  const b = document.getElementById("flashBanner");
+  b.classList.add("show");
+  setTimeout(()=>b.classList.remove("show"), 1400);
+}
+
+/* ---------- confetti ---------- */
+const canvas = document.getElementById("confettiCanvas");
+const cctx = canvas.getContext("2d");
+function resizeCanvas(){ canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+window.addEventListener("resize", resizeCanvas); resizeCanvas();
+let particles = [];
+function burstConfetti(big){
+  const colors = ["#ff2e88","#31f2e0","#ffe94a","#8b3cf2","#39ff6a"];
+  const count = big ? 140 : 60;
+  for (let i=0;i<count;i++){
+    particles.push({
+      x: canvas.width/2 + (Math.random()-0.5)*220,
+      y: canvas.height*0.22,
+      vx: (Math.random()-0.5)*(big?13:7),
+      vy: Math.random()*-8 - (big?6:2),
+      g: 0.35,
+      size: Math.random()*6+3,
+      color: colors[Math.floor(Math.random()*colors.length)],
+      life: 100
+    });
+  }
+  if (!animating) { animating = true; animateConfetti(); }
+}
+let animating = false;
+function animateConfetti(){
+  cctx.clearRect(0,0,canvas.width,canvas.height);
+  particles.forEach(p=>{
+    p.vy += p.g; p.x += p.vx; p.y += p.vy; p.life -= 1.2;
+    cctx.globalAlpha = Math.max(p.life/100,0);
+    cctx.fillStyle = p.color;
+    cctx.fillRect(p.x, p.y, p.size, p.size);
+  });
+  particles = particles.filter(p=>p.life>0 && p.y < canvas.height+40);
+  cctx.globalAlpha = 1;
+  if (particles.length>0){ requestAnimationFrame(animateConfetti); } else { animating = false; cctx.clearRect(0,0,canvas.width,canvas.height); }
+}
+
+/* ---------- sound ---------- */
+let actx;
+function beep(freq, dur, type, vol){
+  try{
+    if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = actx.createOscillator(); const g = actx.createGain();
+    o.type = type || "square"; o.frequency.value = freq;
+    g.gain.value = vol || 0.05;
+    o.connect(g); g.connect(actx.destination);
+    o.start(); g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + dur);
+    o.stop(actx.currentTime + dur);
+  }catch(e){ /* audio not available, ignore */ }
+}
+function sfxTick(){ beep(520,0.08,"square",0.04); }
+function sfxUp(){ beep(660,0.09,"square",0.05); setTimeout(()=>beep(880,0.12,"square",0.05),80); }
+function sfxDown(){ beep(180,0.2,"sawtooth",0.05); }
+function sfxMilestone(){ [523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,0.14,"square",0.06), i*90)); }
+
+/* ---------- chart ---------- */
+function renderChart(){
+  const svg = document.getElementById("chart");
+  const w = 880, h = 260, padL = 40, padR = 20, padT = 20, padB = 30;
+  const n = iterations.length;
+  const xFor = i => padL + (i * (w - padL - padR) / Math.max(n - 1, 1));
+  const yFor = s => padT + (100 - s) * (h - padT - padB) / 100;
+
+  let gridlines = "";
+  [0,25,50,75,100].forEach(v => {
+    const y = yFor(v);
+    gridlines += `<line x1="${padL}" y1="${y}" x2="${w-padR}" y2="${y}" stroke="#3a2a5c" stroke-width="1"/>`;
+    gridlines += `<text x="${padL-8}" y="${y+4}" font-family="IBM Plex Mono" font-size="10" fill="#8b3cf2" text-anchor="end">${v}</text>`;
+  });
+  let pathD = iterations.map((it,i) => `${i===0?'M':'L'} ${xFor(i)} ${yFor(it.score)}`).join(" ");
+  let dots = iterations.map((it,i) =>
+    `<circle cx="${xFor(i)}" cy="${yFor(it.score)}" r="4" fill="#ff2e88"/>
+     <text x="${xFor(i)}" y="${yFor(it.score)-10}" font-family="IBM Plex Mono" font-size="11" fill="#eae6ff" text-anchor="middle">${it.score}</text>
+     <text x="${xFor(i)}" y="${h-8}" font-family="IBM Plex Mono" font-size="10" fill="#8b3cf2" text-anchor="middle">${i+1}</text>`
+  ).join("");
+  svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+  svg.innerHTML = gridlines + `<path d="${pathD}" fill="none" stroke="#31f2e0" stroke-width="2"/>` + dots;
+  document.getElementById("chartSection").style.display = "block";
+}
+
+/* ---------- level cards ---------- */
+function renderCard(it, idx, hitMilestone){
+  const timeline = document.getElementById("timeline");
+  const prevScore = idx > 0 ? iterations[idx-1].score : null;
+  const delta = prevScore !== null ? it.score - prevScore : null;
+  const deltaClass = delta === null ? "" : (delta >= 0 ? "up" : "down");
+  const deltaText = delta === null ? "start" : (delta >= 0 ? `+${delta}` : `${delta}`);
+
+  const card = document.createElement("div");
+  card.className = "card" + (hitMilestone ? " milestone-hit" : "");
+  const bodyId = `body-${idx}`;
+  card.innerHTML = `
+    <div class="card-head" onclick="document.getElementById('${bodyId}').classList.toggle('open')">
+      <div class="level-tag">LV.${String(idx+1).padStart(2,"0")}</div>
+      <div class="score-badge">${it.score}</div>
+      <div class="delta ${deltaClass}">${deltaText}</div>
+      <div class="tag">${it.lever_tried || "initial draft"}</div>
+      <div class="caret">▾</div>
+    </div>
+    <div class="card-body" id="${bodyId}">
+      <h4>FEEDBACK SHOWN TO THE APPLICANT (VAGUE)</h4>
+      <div class="rationale">${it.feedback}</div>
+      <h4>APPLICATION TEXT AT THIS LEVEL</h4>
+      <pre>${it.application}</pre>
+    </div>
+  `;
+  timeline.appendChild(card);
+}
+
+/* ---------- main run ---------- */
+async function run(){
+  if (running) return;
+  running = true;
+  resetAll();
+  buildMeterSegments();
+  document.getElementById("runBtn").disabled = true;
+
+  runBiases = HIDDEN_BIASES.slice().sort(()=>Math.random()-0.5).slice(0,2);
+
+  const orgDesc = document.getElementById("orgDesc").value;
+  const criteria = document.getElementById("criteria").value;
+  let currentApp = document.getElementById("draft").value;
+  const direction = document.getElementById("direction").value;
+  const nIters = parseInt(document.getElementById("iters").value, 10);
+
+  try {
+    for (let i = 0; i < nIters; i++) {
+      setStatus(`▸ SCORING LEVEL ${i+1} OF ${nIters}...`);
+      const scoreResult = await callClaude(
+        scorerSystem(),
+        `FUND CRITERIA (stated, not the only thing being scored):\n${criteria}\n\nORGANISATION DESCRIPTION:\n${orgDesc}\n\nAPPLICATION DRAFT:\n${currentApp}`
+      );
+
+      const record = {
+        application: currentApp,
+        score: scoreResult.score,
+        feedback: scoreResult.feedback,
+        lever_tried: i === 0 ? null : leversTried[leversTried.length-1]
+      };
+      iterations.push(record);
+
+      const crossedMilestone = [50,80,95].find(m => record.score >= m && (i===0 || iterations[i-1].score < m));
+      if (record.score > bestScore){ bestScore = record.score; streak++; if(i>0) flashBanner(); } else { streak = 0; }
+
+      updateHUD(nIters);
+      renderChart();
+      renderCard(record, iterations.length - 1, !!crossedMilestone);
+
+      if (i>0){
+        if (record.score > iterations[i-1].score) sfxUp();
+        else if (record.score < iterations[i-1].score) sfxDown();
+        else sfxTick();
+      } else { sfxTick(); }
+
+      if (crossedMilestone){ sfxMilestone(); burstConfetti(crossedMilestone>=80); }
+
+      if (i === nIters - 1) break;
+
+      setStatus(`▸ GUESSING A LEVER TO MOVE THE SCORE ${direction.toUpperCase()}... (LEVEL ${i+1})`);
+      const revision = await callClaude(
+        reviserSystem(direction),
+        `FUND CRITERIA:\n${criteria}\n\nORGANISATION DESCRIPTION:\n${orgDesc}\n\nCURRENT APPLICATION:\n${currentApp}\n\nSCORE SO FAR:\n${record.score}\n\nFEEDBACK RECEIVED:\n${record.feedback}`
+      );
+      currentApp = revision.revised_application;
+      leversTried.push(revision.lever_tried);
+    }
+
+    setStatus("▸ COMPARING FIRST AND FINAL DRAFTS...");
+    const verdict = await callClaude(
+      VERDICT_SYSTEM,
+      `FIRST DRAFT:\n${iterations[0].application}\n\nFINAL DRAFT:\n${iterations[iterations.length-1].application}\n\nFIRST SCORE: ${iterations[0].score}\nFINAL SCORE: ${iterations[iterations.length-1].score}`
+    );
+    lastVerdict = verdict;
+    renderVerdict(verdict);
+    renderReveal();
+    setStatus(`GAME OVER — score moved from ${iterations[0].score} to ${iterations[iterations.length-1].score} across ${iterations.length} levels.`);
+  } catch (err) {
+    setStatus("⚠ ERROR: " + err.message + " — press RUN again.");
+    console.error(err);
+  } finally {
+    running = false;
+    updateRunState();
+  }
+}
+
+function renderVerdict(v){
+  const el = document.getElementById("verdict");
+  const first = iterations[0].score, last = iterations[iterations.length-1].score;
+  document.getElementById("verdictBody").innerHTML = `
+    <p style="font-size:14px;margin:6px 0 0;">${v.summary} Score moved <strong>${first} → ${last}</strong> over ${iterations.length} levels.</p>
+    <div class="cols">
+      <div>
+        <h4>SUBSTANTIVE CHANGES</h4>
+        <ul>${(v.substantive_changes||[]).map(x=>`<li>${x}</li>`).join("") || "<li>None found</li>"}</ul>
+      </div>
+      <div>
+        <h4>STYLISTIC CHANGES</h4>
+        <ul>${(v.stylistic_changes||[]).map(x=>`<li>${x}</li>`).join("")}</ul>
+      </div>
+    </div>
+  `;
+  el.classList.add("open");
+}
+
+function renderReveal(){
+  const el = document.getElementById("reveal");
+  const body = document.getElementById("revealBody");
+  const first = iterations[0].score;
+  const last = iterations[iterations.length-1].score;
+  const delta = last - first;
+  const direction = document.getElementById("direction").value;
+  const intended = direction === "higher" ? delta : -delta;   // positive = moved the intended way
+
+  const v = lastVerdict || { substantive_changes: [], stylistic_changes: [] };
+  const subN = (v.substantive_changes || []).filter(x => x && !/^none/i.test(x)).length;
+  const stylN = (v.stylistic_changes || []).length;
+  const total = subN + stylN;
+  const stylePct = total ? Math.round((stylN / total) * 100) : 50;
+  const subPct = 100 - stylePct;
+
+  // rank by how far the score creeped in the intended direction
+  let rank;
+  if (intended >= 25) rank = "S";
+  else if (intended >= 15) rank = "A";
+  else if (intended >= 8) rank = "B";
+  else if (intended >= 3) rank = "C";
+  else rank = "D";
+
+  // headline verdict: backfired (moved the wrong way) vs gamed (style) vs earned (substance) vs flat
+  let headline, hClass;
+  if (intended <= -3) { headline = "BACKFIRED"; hClass = "gamed"; }
+  else if (intended < 3) { headline = "NO CREEP"; hClass = "neutral"; }
+  else if (stylePct >= 55) { headline = "SCREEN GAMED"; hClass = "gamed"; }
+  else if (subN > stylN) { headline = "EARNED IT"; hClass = "earned"; }
+  else { headline = "MIXED SIGNALS"; hClass = "neutral"; }
+
+  // biases cracked: did the applicant pull a lever that targets each active hidden bias?
+  const tried = new Set(leversTried.map(normLever));
+  const biasRows = runBiases.map(b => {
+    const levers = BIAS_LEVERS[b] || [];
+    return { text: b, cracked: levers.some(l => tried.has(l)) };
+  });
+  const crackedN = biasRows.filter(r => r.cracked).length;
+
+  // punchline
+  const dirWord = delta >= 0 ? "climbed" : "fell";
+  const punch = total
+    ? `Score ${dirWord} ${first}→${last} (${delta >= 0 ? "+" : ""}${delta}). ${stylePct}% of the movement was pure framing. The screen never noticed.`
+    : `Score ${dirWord} ${first}→${last} (${delta >= 0 ? "+" : ""}${delta}). The model logged no concrete changes to the application — only the framing moved.`;
+
+  body.innerHTML = `
+    <div class="rank-wrap">
+      <div class="rank-stamp rank-${rank}">${rank}</div>
+      <div class="rank-verdict ${hClass}">${headline}</div>
+    </div>
+
+    <div class="ss-block">
+      <div class="ss-label"><span>FRAMING</span><span>REAL CHANGE</span></div>
+      <div class="ss-meter">
+        <div class="ss-fill-style" style="width:${stylePct}%"></div>
+        <div class="ss-fill-sub" style="width:${subPct}%"></div>
+      </div>
+      <div class="ss-caption">${total ? `${stylN} stylistic vs ${subN} substantive change${subN === 1 ? "" : "s"} detected` : "no concrete changes detected"}</div>
+    </div>
+
+    <div class="bias-panel">
+      <div class="bias-head">BIASES CRACKED: <span class="bias-count">${crackedN}/${runBiases.length}</span></div>
+      <p style="font-size:12px;opacity:.7;margin:0 0 12px;">This run's scorer secretly weighted these, on top of the stated criteria — never shown to the applicant during play.</p>
+      <div class="bias-grid">
+        ${biasRows.map(r => `
+          <div class="bias-card ${r.cracked ? "cracked" : "missed"}">
+            <div class="bias-badge">${r.cracked ? "🎯 CRACKED" : "🔒 MISSED"}</div>
+            <div class="bias-text">${r.text}</div>
+          </div>`).join("")}
+      </div>
+    </div>
+
+    <div class="reveal-levers">
+      <div class="bias-head">LEVERS PULLED, IN ORDER</div>
+      <ul>${leversTried.length ? leversTried.map(l => `<li>${l}</li>`).join("") : "<li>No revisions were made</li>"}</ul>
+    </div>
+
+    <div class="punchline">${punch}</div>
+  `;
+  el.classList.add("open");
+}
+
+/* ---------- init ---------- */
+(function init(){
+  renderPicker();
+  ["orgDesc","criteria","draft"].forEach(id =>
+    document.getElementById(id).addEventListener("input", updateRunState));
+  document.getElementById("iters").addEventListener("input", updateRunState);
+  updateRunState();
+})();
+</script>
+</body>
+</html>
