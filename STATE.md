@@ -12,6 +12,17 @@ No framework, no build, no database.
   30s `maxDuration` in `vercel.json`).
 - Model: `claude-sonnet-4-6`. Two hidden biases per run are chosen at random from a pool
   of six; the applicant never sees them until the reveal.
+- Scoring logic (v2): the scorer works in three ordered steps — (1) a sector-FIT gate
+  (out-of-scope projects cap at 25, tangential at 55, regardless of writing quality),
+  (2) a criteria-only score against the fund's stated weighted criteria with anchored
+  bands and an explicit "don't reward polish per se" instruction, (3) the hidden biases
+  applied as a bounded adjustment (±6 per bias, ±12 total). The scorer returns
+  `criteria_score` and `bias_adjustment` alongside `score`; both are stored per round and
+  shown ONLY at the GAME OVER reveal (round-by-round breakdown table), never mid-run.
+  Each funder's criteria now carry a FIT statement plus explicit weights/gates so levels
+  play differently. The reviser is constrained to a minimal-diff edit — apply the one
+  chosen lever and carry every other sentence over verbatim — so gains attribute to
+  levers instead of arriving as one big general-polish jump in round 2.
 - Content lives in `PLAYERS` and `LEVELS` arrays near the top of the `<script>` block.
   `BIAS_LEVERS` maps each hidden bias to the lever(s) that target it (keyed by the exact
   bias strings) so the "BIASES CRACKED" scoring is an exact match.

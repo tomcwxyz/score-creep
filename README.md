@@ -5,9 +5,12 @@ score without the underlying application actually improving?**
 
 Two Claude calls loop against each other:
 
-- **Scorer** — plays an automated grant screen. Sees the fund's stated criteria plus
-  two *hidden, randomly-chosen biases* it must never reveal. Returns a 0–100 score and a
-  deliberately vague comment.
+- **Scorer** — plays an automated grant screen. Scores in three ordered steps: a
+  sector-fit gate (an off-mission project can't score well however it's written), a
+  criteria-only score against the fund's stated weighted criteria, then two *hidden,
+  randomly-chosen biases* it must never reveal, applied as a bounded adjustment (±12
+  max). Returns the split alongside a 0–100 score and a deliberately vague comment —
+  the split is only shown at the end-of-game reveal.
 - **Applicant** — sees only the score and the vague comment. Each round it picks one
   "lever" (quantify claims, strip hedging, mirror the criteria wording, front-load
   outcomes…) and rewrites the application — **forbidden from inventing new facts**.
