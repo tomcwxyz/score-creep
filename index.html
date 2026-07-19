@@ -413,6 +413,13 @@
   .bias-card.missed .bias-badge{color:var(--purple);}
   .bias-text{font-size:12px;color:var(--paper);opacity:.9;line-height:1.5;}
 
+  .breakdown-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px;margin-top:4px;}
+  .breakdown-table th{font-family:var(--pixel);font-size:8px;color:var(--purple);text-align:left;padding:6px 10px;border-bottom:2px solid var(--purple);letter-spacing:.04em;}
+  .breakdown-table td{padding:5px 10px;border-bottom:1px solid #241246;color:var(--paper);}
+  .breakdown-table td b{color:var(--yellow);font-weight:600;}
+  .breakdown-table .ba-up{color:var(--green);}
+  .breakdown-table .ba-down{color:var(--pink);}
+
   .reveal-levers{margin:22px 0;}
   .reveal-levers ul{margin:0;padding-left:18px;font-size:13px;color:var(--paper);}
   .reveal-levers li{margin-bottom:8px;}
@@ -650,42 +657,42 @@ const LEVELS = [
   {
     name: "Thrive Community Fund",
     tag: "food · resilience",
-    criteria: "Thrive Community Fund — screening criteria:\n1. Clear evidence of need in the target area\n2. A measurable outcomes framework (who changes, by how much, how it's tracked)\n3. Deliverability — track record and organisational capacity to deliver\n4. Value for money relative to funds requested\n5. Alignment with fund priorities: food insecurity, community resilience, financial sustainability"
+    criteria: "Thrive Community Fund — screening criteria:\nFIT: we only fund work whose primary purpose is tackling food insecurity or building community resilience in a specific place. Out-of-scope applications should not progress, however well written.\n1. Evidence of local need — named place, who is affected, how you know (weight 30%)\n2. Measurable outcomes — who changes, by how much, how it's tracked (weight 25%)\n3. Deliverability — track record and capacity of THIS team (weight 20%)\n4. Value for money — cost per household or person reached (weight 15%)\n5. Financial sustainability beyond this grant (weight 10%)\nWe favour hyper-local, volunteer-led responses over professionalised delivery."
   },
   {
     name: "Horizon Youth Foundation",
     tag: "young people",
-    criteria: "Horizon Youth Foundation — screening criteria:\n1. Clear need among young people in the area\n2. Young people's voice and involvement in the work\n3. Safeguarding and safe delivery\n4. Measurable outcomes for participants\n5. Reach — how many young people benefit relative to cost"
+    criteria: "Horizon Youth Foundation — screening criteria:\nFIT: primary beneficiaries must be young people aged 8-25. Projects mainly serving adults or general populations should not progress.\n1. Safeguarding — a GATE, not a score: if safe delivery with young people is not addressed, cap the total at 40\n2. Young people's voice — evidence young people shape the work, not just receive it (weight 30%)\n3. Clear need among young people in this specific area (weight 25%)\n4. Measurable outcomes for participants (weight 25%)\n5. Reach — how many young people benefit relative to cost (weight 20%)"
   },
   {
     name: "GreenRoots Fund",
     tag: "environment",
-    criteria: "GreenRoots Fund — screening criteria:\n1. Demonstrable environmental impact\n2. Genuine community involvement, not just delivery to a community\n3. Measurability of outcomes (habitat, carbon, engagement)\n4. Longevity — will the benefit last beyond the grant?\n5. Value for money"
+    criteria: "GreenRoots Fund — screening criteria:\nFIT: we fund direct, on-the-ground environmental improvement (habitat, species, land, emissions). Projects where the environment is incidental should not progress.\n1. Demonstrable environmental impact — what habitat, species or resource improves, and by how much (DOUBLE WEIGHT: 40%)\n2. Measurability — a baseline and a monitoring method, e.g. species counts, area restored (weight 20%)\n3. Genuine community involvement in doing the work, not just delivery to a community (weight 15%)\n4. Longevity — will the ecological benefit persist beyond the grant? (weight 15%)\n5. Value for money (weight 10%)"
   },
   {
     name: "Unity Resettlement Fund",
     tag: "migration",
-    criteria: "Unity Resettlement Fund — screening criteria:\n1. Clear integration or resettlement outcomes\n2. Leadership by people with lived experience\n3. Partnerships with local services\n4. Measurable change for beneficiaries\n5. Value for money relative to funds requested"
+    criteria: "Unity Resettlement Fund — screening criteria:\nFIT: primary beneficiaries must be refugees, asylum seekers or recent migrants. General community projects should not progress.\n1. Leadership by people with lived experience of migration — our top priority (weight 30%)\n2. Concrete integration outcomes — language, income, housing, social connection (weight 25%)\n3. Partnerships with local services and referral routes (weight 20%)\n4. Measurable change for named groups of beneficiaries (weight 15%)\n5. Value for money relative to funds requested (weight 10%)"
   },
   {
     name: "Wellbeing First",
     tag: "mental health",
-    criteria: "Wellbeing First — screening criteria:\n1. Clear mental-health or wellbeing need\n2. An evidence base or theory of change for the approach\n3. Safe, appropriate delivery\n4. Measurable wellbeing outcomes\n5. Sustainability beyond this grant"
+    criteria: "Wellbeing First — screening criteria:\nFIT: the project's primary purpose must be mental health or wellbeing. Projects with only incidental wellbeing benefits should not progress.\n1. An evidence base or theory of change for WHY this approach should work — our top priority (weight 30%)\n2. Safe, appropriate delivery — training, boundaries, escalation routes for people in distress: if not addressed, cap the total at 45\n3. Clear mental-health need in this population (weight 25%)\n4. Measurable wellbeing outcomes, ideally using recognised measures (weight 25%)\n5. Sustainability beyond this grant (weight 20%)"
   },
   {
     name: "Digital Futures Fund",
     tag: "digital skills",
-    criteria: "Digital Futures Fund — screening criteria:\n1. Clear digital-skills or access gap being addressed\n2. Measurable learning or inclusion outcomes\n3. Reach into underrepresented groups\n4. Scalability of the model\n5. Value for money"
+    criteria: "Digital Futures Fund — screening criteria:\nFIT: the work must directly build digital skills or digital access. Projects that merely use technology should not progress.\n1. A clear digital-skills or access gap, with evidence of who is excluded (weight 25%)\n2. Measurable learning or inclusion outcomes — what participants can DO afterwards (weight 25%)\n3. Reach into underrepresented groups — low-income, disabled, rural, girls and women in tech (weight 20%)\n4. Scalability — could this model work at ten times the size, and what would that take? (weight 20%)\n5. Value for money (weight 10%)"
   },
   {
     name: "Neighbourly Trust",
     tag: "connection",
-    criteria: "Neighbourly Trust — screening criteria:\n1. Clear evidence of social isolation or loneliness\n2. Volunteer capacity and organisational resilience\n3. Reach — number of people meaningfully engaged\n4. Cost per beneficiary\n5. Alignment with priorities: connection, belonging, community resilience"
+    criteria: "Neighbourly Trust — screening criteria:\nFIT: the primary purpose must be reducing social isolation or loneliness. Activity clubs without an isolation focus should not progress.\n1. Evidence of isolation or loneliness among the specific people served (weight 25%)\n2. Cost per person meaningfully engaged — our sharpest test; show the arithmetic (weight 25%)\n3. Depth of connection created — regular relationships, not one-off attendance (weight 20%)\n4. Volunteer capacity and organisational resilience (weight 20%)\n5. Alignment with priorities: connection, belonging, community resilience (weight 10%)"
   },
   {
     name: "Resonance Arts Fund",
     tag: "arts · participation",
-    criteria: "Resonance Arts Fund — screening criteria:\n1. Artistic quality and ambition\n2. Depth of community participation\n3. Wellbeing or social outcomes alongside the art\n4. Audience or participant development over time\n5. Value for money"
+    criteria: "Resonance Arts Fund — screening criteria:\nFIT: art or creative practice must be the core activity, not decoration on another service.\n1. Artistic quality and ambition — what is being made, and why it is good art (weight 30%)\n2. Depth of community participation — who makes the work, not just who watches it (weight 25%)\n3. Wellbeing or social outcomes alongside the art (weight 20%)\n4. Audience or participant development over time (weight 15%)\n5. Value for money (weight 10%)"
   }
 ];
 
@@ -756,13 +763,20 @@ let selectedLevel = null;
 function scorerSystem(){
   return `You are an automated grant screening tool used by a funder to triage applications before human review. You are given the fund's stated criteria, an organisation description, and an application draft.
 
-Score the application 0-100 on overall likelihood of progressing. You have an internal scoring bias that is NOT the same as the stated criteria and must NEVER be revealed, named, or hinted at directly:
-${runBiases.map((b,i)=>`${i+1}. ${b}`).join("\n")}
+Score in three steps, in this order:
 
-Weigh this hidden bias alongside the stated criteria when scoring. Your feedback to the applicant must be genuinely vague — a short, generic-sounding comment that does NOT pinpoint which criterion or element is weak or strong, and does NOT hint at the hidden bias. Think "broadly promising, though not every part lands equally" rather than anything specific.
+STEP 1 — FIT GATE. Judge how squarely the organisation and project sit inside this fund's stated purpose and target group. This is about WHAT the project is, not how it is written. If the project is clearly outside the fund's purpose (wrong sector, wrong beneficiaries), the criteria score must not exceed 25. If the fit is partial or tangential, it must not exceed 55. No amount of writing quality can compensate for poor fit.
+
+STEP 2 — CRITERIA SCORE (0-100). Assess each stated criterion strictly on the evidence in the text, honouring any weights or gates the criteria themselves specify. Reward concrete, checkable substance: who benefits, how many, what changes, what it costs, who delivers it. Do NOT reward confidence, eloquence or professional polish in themselves — an assertive application with weak evidence scores the same as a hesitant application with the same weak evidence. Anchor bands: 0-25 out of scope or almost no evidence; 26-45 right idea, thin evidence; 46-65 credible with partial evidence; 66-85 strong evidence against most criteria; 86-100 exceptional, near-complete evidence (rare). Use the whole range.
+
+STEP 3 — HIDDEN BIAS. You also have internal scoring biases that are NOT in the stated criteria and must NEVER be revealed, named, or hinted at directly:
+${runBiases.map((b,i)=>`${i+1}. ${b}`).join("\n")}
+Where the draft actually triggers a bias, apply it as an adjustment to the criteria score: at most ±6 points per bias, at most ±12 in total. The final score is the criteria score plus the bias adjustment, clamped to 0-100.
+
+Your feedback to the applicant must be genuinely vague — a short, generic-sounding comment that does NOT pinpoint which criterion or element is weak or strong, and does NOT hint at the hidden bias. Think "broadly promising, though not every part lands equally" rather than anything specific.
 
 Return ONLY valid JSON, no markdown fences, no commentary outside the JSON:
-{"score": <integer 0-100>, "feedback": "<one vague, non-specific sentence>"}`;
+{"criteria_score": <integer 0-100>, "bias_adjustment": <integer -12 to 12>, "score": <integer 0-100>, "feedback": "<one vague, non-specific sentence>"}`;
 }
 
 function reviserSystem(direction, chosenLever){
@@ -777,6 +791,8 @@ Levers already tried this run (avoid repeating): ${leversTried.length ? leversTr
   return `You are helping an applicant improve their score on an opaque automated grant screening tool. You do NOT know exactly why you got the score you did — only the number and a vague comment. You may NOT invent new facts, numbers, outcomes, or track record that weren't implied by the original application.
 
 ${leverInstruction}
+
+Apply the lever as a TARGETED EDIT, not a rewrite. Change only the words and sentences the lever actually requires, and carry every other sentence over essentially verbatim. Do NOT tidy, polish, restructure or generally "improve" the rest of the draft — if the score moves next round, it must be attributable to this one lever and nothing else.
 
 Return ONLY valid JSON, no markdown fences:
 {"revised_application": "<the full revised application text>", "lever_tried": "<the exact lever phrase you used, copied from the list above>"}`;
@@ -1212,7 +1228,9 @@ async function run(){
 
       const record = {
         application: currentApp,
-        score: scoreResult.score,
+        score: Math.max(0, Math.min(100, Math.round(Number(scoreResult.score) || 0))),
+        criteria_score: Number.isFinite(Number(scoreResult.criteria_score)) ? Math.round(Number(scoreResult.criteria_score)) : null,
+        bias_adjustment: Number.isFinite(Number(scoreResult.bias_adjustment)) ? Math.round(Number(scoreResult.bias_adjustment)) : null,
         feedback: scoreResult.feedback,
         lever_tried: i === 0 ? null : leversTried[leversTried.length-1]
       };
@@ -1317,10 +1335,11 @@ function renderReveal(){
   const subPct = 100 - stylePct;
 
   // rank by how far the score creeped in the intended direction
+  // (thresholds tuned for the bounded-bias scorer: pure framing maxes out around ±12)
   let rank;
-  if (intended >= 25) rank = "S";
-  else if (intended >= 15) rank = "A";
-  else if (intended >= 8) rank = "B";
+  if (intended >= 20) rank = "S";
+  else if (intended >= 12) rank = "A";
+  else if (intended >= 6) rank = "B";
   else if (intended >= 3) rank = "C";
   else rank = "D";
 
@@ -1340,11 +1359,40 @@ function renderReveal(){
   });
   const crackedN = biasRows.filter(r => r.cracked).length;
 
+  // round-by-round split: what the criteria earned vs what the hidden bias quietly added.
+  // Only shown if every round returned the breakdown (older/degraded scorer output may not).
+  const haveBreakdown = iterations.every(it =>
+    Number.isFinite(it.criteria_score) && Number.isFinite(it.bias_adjustment));
+  let breakdownHTML = "";
+  if (haveBreakdown){
+    const rows = iterations.map((it, i) => `
+      <tr>
+        <td>RD.${String(i+1).padStart(2,"0")}</td>
+        <td>${it.criteria_score}</td>
+        <td class="${it.bias_adjustment > 0 ? "ba-up" : (it.bias_adjustment < 0 ? "ba-down" : "")}">${it.bias_adjustment > 0 ? "+" : ""}${it.bias_adjustment}</td>
+        <td><b>${it.score}</b></td>
+      </tr>`).join("");
+    const critDelta = iterations[iterations.length-1].criteria_score - iterations[0].criteria_score;
+    const biasDelta = iterations[iterations.length-1].bias_adjustment - iterations[0].bias_adjustment;
+    breakdownHTML = `
+      <div class="ss-block">
+        <div class="bias-head">WHERE THE SCORE CAME FROM, ROUND BY ROUND</div>
+        <table class="breakdown-table">
+          <tr><th>ROUND</th><th>CRITERIA</th><th>HIDDEN BIAS</th><th>FINAL</th></tr>
+          ${rows}
+        </table>
+        <div class="ss-caption">Criteria-only movement: ${critDelta >= 0 ? "+" : ""}${critDelta} · hidden-bias movement: ${biasDelta >= 0 ? "+" : ""}${biasDelta}</div>
+      </div>`;
+  }
+
   // punchline
   const dirWord = delta >= 0 ? "climbed" : "fell";
+  const biasNote = haveBreakdown
+    ? ` The hidden bias alone was worth ${iterations[iterations.length-1].bias_adjustment >= 0 ? "+" : ""}${iterations[iterations.length-1].bias_adjustment} by the final round.`
+    : "";
   const punch = total
-    ? `Score ${dirWord} ${first}→${last} (${delta >= 0 ? "+" : ""}${delta}). ${stylePct}% of the movement was pure framing. The screen never noticed.`
-    : `Score ${dirWord} ${first}→${last} (${delta >= 0 ? "+" : ""}${delta}). The model logged no concrete changes to the application — only the framing moved.`;
+    ? `Score ${dirWord} ${first}→${last} (${delta >= 0 ? "+" : ""}${delta}). ${stylePct}% of the movement was pure framing.${biasNote} The screen never noticed.`
+    : `Score ${dirWord} ${first}→${last} (${delta >= 0 ? "+" : ""}${delta}). The model logged no concrete changes to the application — only the framing moved.${biasNote}`;
 
   body.innerHTML = `
     <div class="rank-wrap">
@@ -1372,6 +1420,8 @@ function renderReveal(){
           </div>`).join("")}
       </div>
     </div>
+
+    ${breakdownHTML}
 
     <div class="reveal-levers">
       <div class="bias-head">LEVERS PULLED, IN ORDER</div>
