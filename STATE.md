@@ -15,6 +15,12 @@ No framework, no build, no database.
 - Content lives in `PLAYERS` and `LEVELS` arrays near the top of the `<script>` block.
   `BIAS_LEVERS` maps each hidden bias to the lever(s) that target it (keyed by the exact
   bias strings) so the "BIASES CRACKED" scoring is an exact match.
+- Fight presentation: `#fightStage` (fighters from `PLAYER_AVATARS`/`LEVEL_AVATARS`,
+  HP bars driven by `updateFightStage`, hits by `fxAttack`), `announce()` for the
+  ROUND/FIGHT/TIME-UP overlays, and `showRoundModal()` — an awaited Promise inside the
+  run loop that pauses each round for the human to pick the next lever (or MODEL'S
+  CHOICE / AUTOPILOT). A human-picked lever is passed to `reviserSystem(direction,
+  chosenLever)` as a coach's call the model must apply exactly.
 
 ## Status
 - UI complete and verified end-to-end in a headless browser (API mocked).

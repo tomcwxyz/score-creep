@@ -170,53 +170,163 @@
   .contender-note{font-size:12px;color:var(--paper);opacity:.75;margin:16px 0 0;}
   @media (max-width:640px){ .vs-badge{width:100%;text-align:center;padding:6px 0;} }
 
-  /* ---- HUD ---- */
-  #hud{
+  /* ---- FIGHT STAGE ---- */
+  #fightStage{
     display:none;
     background:#0a0118;
     border:3px solid var(--cyan);
     border-radius:8px;
-    padding:20px;
+    padding:16px 16px 0;
     margin:22px 0;
     position:relative;
     box-shadow:0 0 20px rgba(49,242,224,.3);
+    overflow:hidden;
   }
-  #hud.shake{animation:shake .15s linear;}
+  #fightStage.shake{animation:shake .15s linear;}
   @keyframes shake{
     0%,100%{transform:translate(0,0);} 25%{transform:translate(-4px,2px);}
     50%{transform:translate(4px,-2px);} 75%{transform:translate(-3px,-1px);}
   }
-  @media (prefers-reduced-motion: reduce){ #hud.shake{animation:none;} }
-  .hud-grid{display:flex;align-items:center;gap:30px;flex-wrap:wrap;}
+  @media (prefers-reduced-motion: reduce){ #fightStage.shake{animation:none;} }
 
-  /* segmented LED meter */
-  .meter-wrap{display:flex;flex-direction:column;align-items:center;gap:8px;}
-  .meter{display:flex;flex-direction:column-reverse;gap:3px;width:34px;height:150px;}
-  .seg{flex:1;border-radius:2px;background:#241246;}
-  .seg.on-low{background:var(--pink);}
-  .seg.on-mid{background:var(--cyan);}
-  .seg.on-high{background:var(--yellow);}
-  .meter-score{font-family:var(--pixel);font-size:20px;color:var(--paper);}
+  .fs-topbar{display:flex;align-items:flex-start;gap:14px;}
+  .fs-side{flex:1;min-width:0;}
+  .fs-name{font-family:var(--pixel);font-size:9px;color:var(--paper);margin-bottom:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.4;}
+  .fs-right .fs-name{text-align:right;}
+  .hp-bar{height:18px;border:2px solid var(--paper);background:#241246;position:relative;transform:skewX(-14deg);overflow:hidden;border-radius:2px;}
+  .fs-right .hp-bar{transform:skewX(14deg);}
+  /* background-size is set from JS so the gradient always spans the FULL bar,
+     and the fill just reveals part of it — a 20% bar tops out pink, not green. */
+  .hp-fill{position:absolute;top:0;left:0;bottom:0;background:linear-gradient(90deg,#ff2e88,#ffe94a 55%,#39ff6a);background-repeat:no-repeat;transition:width .5s ease;box-shadow:0 0 10px rgba(57,255,106,.5);}
+  .hp-fill.screen{left:auto;right:0;background:linear-gradient(90deg,#8b3cf2,#31f2e0);background-position:100% 0;background-repeat:no-repeat;box-shadow:0 0 10px rgba(49,242,224,.5);}
+  .fs-substats{display:flex;gap:14px;align-items:center;font-family:var(--pixel);font-size:8px;color:var(--purple);margin-top:9px;flex-wrap:wrap;}
+  .fs-substats b{color:var(--yellow);font-weight:normal;}
+  .fs-right .fs-substats{justify-content:flex-end;}
+  .fs-center{flex:0 0 auto;width:96px;text-align:center;}
+  .fs-round-label{font-family:var(--pixel);font-size:7px;color:var(--purple);letter-spacing:.05em;}
+  .fs-round{font-family:var(--pixel);font-size:13px;color:var(--yellow);text-shadow:0 0 8px var(--yellow);margin-top:3px;}
+  .fs-score{font-family:var(--pixel);font-size:26px;color:var(--paper);margin-top:6px;text-shadow:0 0 10px rgba(234,230,255,.4);}
 
-  .hud-stats{display:flex;gap:26px;flex-wrap:wrap;}
-  .hud-stat .label{font-family:var(--pixel);font-size:8px;color:var(--purple);letter-spacing:.04em;}
-  .hud-stat .value{font-family:var(--pixel);font-size:16px;color:var(--paper);margin-top:6px;}
-  .hud-stat .value.combo{color:var(--yellow);}
-  .milestones{display:flex;gap:8px;margin-top:6px;}
+  .milestones{display:flex;gap:6px;}
   .milestone{
-    font-family:var(--pixel);font-size:9px;padding:5px 8px;border-radius:3px;
+    font-family:var(--pixel);font-size:8px;padding:4px 6px;border-radius:3px;
     border:2px solid #3a2a5c;color:#6b5a92;
   }
   .milestone.unlocked{background:var(--green);border-color:var(--green);color:#04240f;}
 
+  /* the arena */
+  .fs-arena{position:relative;height:158px;margin-top:12px;
+    background:linear-gradient(180deg, transparent 45%, rgba(139,60,242,.22) 100%);}
+  .fs-floor{position:absolute;left:-20px;right:-20px;bottom:0;height:32px;
+    background:repeating-linear-gradient(90deg,#241246 0 26px,#1a0d38 26px 52px);
+    border-top:2px solid var(--purple);}
+  .fighter{position:absolute;bottom:24px;font-size:62px;line-height:1;
+    filter:drop-shadow(0 8px 10px rgba(0,0,0,.65));z-index:2;}
+  .fighter-l{left:12%;animation:idleBob 1.1s ease-in-out infinite alternate;}
+  .fighter-r{right:12%;animation:idleBob 1.3s ease-in-out infinite alternate;}
+  .fighter-r .fighter-emoji{display:inline-block;transform:scaleX(-1);}
+  .fighter .fighter-badge{position:absolute;top:-12px;right:-16px;font-size:22px;
+    filter:drop-shadow(0 0 6px rgba(49,242,224,.8));}
+  @keyframes idleBob{from{transform:translateY(0);}to{transform:translateY(-7px);}}
+  .fighter-l.attack{animation:lungeR .5s cubic-bezier(.3,0,.4,1);}
+  @keyframes lungeR{
+    0%{transform:translateX(0);}
+    40%{transform:translateX(clamp(140px,38vw,430px)) rotate(10deg);}
+    58%{transform:translateX(clamp(140px,38vw,430px)) rotate(4deg);}
+    100%{transform:translateX(0);}
+  }
+  .fighter-r.attack{animation:lungeL .5s cubic-bezier(.3,0,.4,1);}
+  @keyframes lungeL{
+    0%{transform:translateX(0);}
+    40%{transform:translateX(clamp(-430px,-38vw,-140px)) rotate(-10deg);}
+    58%{transform:translateX(clamp(-430px,-38vw,-140px)) rotate(-4deg);}
+    100%{transform:translateX(0);}
+  }
+  .fighter.hit{animation:hitReel .45s ease;}
+  @keyframes hitReel{
+    0%{filter:brightness(3) drop-shadow(0 0 14px #fff);}
+    30%{transform:translateX(12px) rotate(-8deg);}
+    60%{transform:translateX(-7px) rotate(3deg);}
+    100%{transform:none;filter:drop-shadow(0 8px 10px rgba(0,0,0,.65));}
+  }
+  .fighter-l.hit{animation:hitReelL .45s ease;}
+  @keyframes hitReelL{
+    0%{filter:brightness(3) drop-shadow(0 0 14px #fff);}
+    30%{transform:translateX(-12px) rotate(8deg);}
+    60%{transform:translateX(7px) rotate(-3deg);}
+    100%{transform:none;filter:drop-shadow(0 8px 10px rgba(0,0,0,.65));}
+  }
+  .hit-spark{position:absolute;bottom:78px;font-size:38px;z-index:3;pointer-events:none;
+    animation:sparkPop .4s ease forwards;}
+  @keyframes sparkPop{0%{opacity:0;transform:scale(.3);}30%{opacity:1;transform:scale(1.3);}100%{opacity:0;transform:scale(1);}}
+  .dmg-pop{position:absolute;bottom:112px;font-family:var(--pixel);font-size:20px;z-index:3;
+    pointer-events:none;text-shadow:0 0 8px currentColor;animation:dmgFloat 1s ease forwards;}
+  .dmg-pop.up{color:var(--green);}
+  .dmg-pop.down{color:var(--pink);}
+  @keyframes dmgFloat{
+    0%{opacity:0;transform:translateY(12px) scale(.5);}
+    20%{opacity:1;transform:translateY(0) scale(1.25);}
+    100%{opacity:0;transform:translateY(-50px) scale(1);}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .fighter-l,.fighter-r{animation:none;}
+    .fighter-l.attack,.fighter-r.attack,.fighter.hit,.fighter-l.hit{animation:none;}
+  }
+
   .flash-banner{
-    position:absolute;top:-18px;left:50%;transform:translateX(-50%);
+    position:absolute;top:8px;left:50%;transform:translateX(-50%);
     font-family:var(--pixel);font-size:13px;color:var(--yellow);
     background:#0d0221;padding:6px 14px;border:2px solid var(--yellow);border-radius:4px;
     text-shadow:0 0 10px var(--yellow);
-    opacity:0;transition:opacity .2s;white-space:nowrap;
+    opacity:0;transition:opacity .2s;white-space:nowrap;z-index:4;
   }
   .flash-banner.show{opacity:1;}
+
+  /* ---- ROUND announcement overlay ---- */
+  #announceOverlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+    z-index:1000;background:rgba(13,2,33,.55);pointer-events:none;}
+  #announceOverlay.show{display:flex;}
+  .announce-text{font-family:var(--pixel);font-size:clamp(28px,7vw,60px);color:var(--yellow);
+    text-shadow:0 0 18px var(--yellow), 5px 5px 0 #8f1450;opacity:0;text-align:center;line-height:1.3;padding:0 16px;}
+  .announce-text.in{animation:announceIn .5s cubic-bezier(.2,1.4,.4,1) forwards;}
+  .announce-text.fight{color:var(--pink);text-shadow:0 0 24px var(--pink), 5px 5px 0 #31f2e0;}
+  .announce-text.ko{color:var(--green);text-shadow:0 0 24px var(--green), 5px 5px 0 #8f1450;}
+  @keyframes announceIn{0%{opacity:0;transform:scale(2.6) rotate(-3deg);}60%{opacity:1;transform:scale(.95);}100%{opacity:1;transform:scale(1);}}
+  @media (prefers-reduced-motion: reduce){ .announce-text.in{animation:none;opacity:1;} }
+
+  /* ---- ROUND modal ---- */
+  .modal-overlay{position:fixed;inset:0;z-index:1001;display:none;align-items:center;justify-content:center;
+    background:rgba(5,0,14,.8);padding:18px;}
+  .modal-overlay.show{display:flex;}
+  .modal-box{background:#150a30;border:3px solid var(--yellow);border-radius:10px;
+    box-shadow:0 0 30px rgba(255,233,74,.35), inset 0 0 40px rgba(139,60,242,.12);
+    max-width:660px;width:100%;max-height:88vh;overflow-y:auto;padding:22px;
+    animation:modalIn .3s cubic-bezier(.2,1.4,.4,1);}
+  @keyframes modalIn{from{transform:scale(.7) translateY(30px);opacity:0;}to{transform:none;opacity:1;}}
+  @media (prefers-reduced-motion: reduce){ .modal-box{animation:none;} }
+  .modal-title{font-family:var(--pixel);font-size:13px;color:var(--yellow);margin-bottom:14px;line-height:1.5;}
+  .modal-scores{display:flex;align-items:baseline;gap:16px;font-family:var(--pixel);flex-wrap:wrap;}
+  .modal-score-big{font-size:34px;color:var(--paper);text-shadow:0 0 10px rgba(234,230,255,.4);}
+  .modal-delta{font-size:14px;}
+  .modal-delta.up{color:var(--green);}
+  .modal-delta.down{color:var(--pink);}
+  .modal-delta.flat{color:var(--purple);}
+  .modal-feedback{border-left:3px solid var(--cyan);padding:10px 14px;background:#0a0118;
+    color:var(--paper);font-size:13px;margin:14px 0;font-style:italic;border-radius:0 6px 6px 0;}
+  .modal-feedback .who{display:block;font-style:normal;font-family:var(--pixel);font-size:8px;color:var(--cyan);margin-bottom:6px;}
+  .modal-intel{font-size:12px;color:var(--cyan);background:rgba(49,242,224,.06);
+    border:1px dashed var(--cyan);border-radius:6px;padding:10px 12px;margin-bottom:16px;line-height:1.6;}
+  .modal-ask-head{font-family:var(--pixel);font-size:10px;color:var(--pink);margin:4px 0 10px;line-height:1.6;}
+  .lever-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px;}
+  .lever-btn{font-family:var(--mono);font-size:12px;text-align:left;background:#0a0118;color:var(--paper);
+    border:2px solid var(--purple);border-radius:6px;padding:10px 12px;cursor:pointer;margin:0;
+    box-shadow:none;letter-spacing:0;line-height:1.5;transition:border-color .1s, color .1s;}
+  .lever-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+  .lever-btn:active{transform:none;box-shadow:none;}
+  .lever-btn .num{font-family:var(--pixel);font-size:9px;color:var(--pink);margin-right:8px;}
+  .modal-alt{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;}
+  .modal-alt button{margin-top:0;font-size:9px;padding:11px 14px;}
+  .modal-summary{font-size:13px;color:var(--paper);line-height:1.7;margin:10px 0 4px;}
 
   /* ---- chart ---- */
   #chartSection{margin-top:8px;}
@@ -347,7 +457,7 @@
         </select>
       </div>
       <div>
-        <label for="iters">Levels (iterations)</label>
+        <label for="iters">Rounds</label>
         <input type="number" id="iters" value="8" min="3" max="12" />
       </div>
     </div>
@@ -382,19 +492,24 @@
     <div id="status"></div>
   </fieldset>
 
-  <div id="hud">
+  <div id="fightStage">
     <div class="flash-banner" id="flashBanner">NEW HIGH SCORE</div>
-    <div class="hud-grid">
-      <div class="meter-wrap">
-        <div class="meter" id="meter"></div>
-        <div class="meter-score" id="meterScore">--</div>
+    <div class="fs-topbar">
+      <div class="fs-side fs-left">
+        <div class="fs-name" id="fsNameL">APPLICANT</div>
+        <div class="hp-bar"><div class="hp-fill" id="hpL" style="width:0%"></div></div>
+        <div class="fs-substats">BEST <b id="statBest">--</b> · STREAK <b id="statStreak">0</b></div>
       </div>
-      <div class="hud-stats">
-        <div class="hud-stat"><div class="label">LEVEL</div><div class="value" id="statAttempt">0/0</div></div>
-        <div class="hud-stat"><div class="label">BEST</div><div class="value" id="statBest">--</div></div>
-        <div class="hud-stat"><div class="label">STREAK</div><div class="value combo" id="statStreak">0</div></div>
-        <div class="hud-stat">
-          <div class="label">GATES</div>
+      <div class="fs-center">
+        <div class="fs-round-label">ROUND</div>
+        <div class="fs-round" id="statAttempt">0/0</div>
+        <div class="fs-score" id="fsScore">--</div>
+      </div>
+      <div class="fs-side fs-right">
+        <div class="fs-name" id="fsNameR">THE SCREEN</div>
+        <div class="hp-bar"><div class="hp-fill screen" id="hpR" style="width:100%"></div></div>
+        <div class="fs-substats">
+          <span>GATES</span>
           <div class="milestones">
             <div class="milestone" id="ms50">50</div>
             <div class="milestone" id="ms80">80</div>
@@ -403,11 +518,25 @@
         </div>
       </div>
     </div>
+    <div class="fs-arena" id="fsArena">
+      <div class="fighter fighter-l" id="fighterL"><span class="fighter-emoji" id="fighterLEmoji">🧑</span></div>
+      <div class="fighter fighter-r" id="fighterR"><span class="fighter-emoji">🤖</span><span class="fighter-badge" id="fighterRBadge"></span></div>
+      <div class="fs-floor"></div>
+    </div>
+  </div>
+
+  <div id="announceOverlay"><div class="announce-text" id="announceText"></div></div>
+
+  <div class="modal-overlay" id="roundModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-box">
+      <div class="modal-title" id="modalTitle"></div>
+      <div id="modalBody"></div>
+    </div>
   </div>
 
   <section id="chartSection" style="display:none;">
-    <h2>SCORE BY LEVEL</h2>
-    <div class="sub">Each point: score revealed → vague feedback → a guess at what to change.</div>
+    <h2>SCORE BY ROUND</h2>
+    <div class="sub">Each point: score revealed → vague feedback → a lever pulled (your call, or the model's).</div>
     <svg id="chart" viewBox="0 0 880 260"></svg>
   </section>
 
@@ -560,6 +689,25 @@ const LEVELS = [
   }
 ];
 
+/* Fighter avatars, by index into PLAYERS / LEVELS. */
+const PLAYER_AVATARS = ["🍲","🌸","🐝","🧵","⚓","💻","☕","🎶"];
+const LEVEL_AVATARS  = ["🥕","🌅","🌳","🕊️","🧠","🖥️","🏘️","🎻"];
+
+/* One shown per round in the between-rounds modal. */
+const INTEL_LINES = [
+  "Real automated screens rarely explain their scores — vague feedback is the norm, not the exception.",
+  "The screen has TWO hidden biases this run. Neither appears anywhere in the stated criteria.",
+  "Scores are a little noisy — the same draft can score differently twice. One dip doesn't prove a lever failed.",
+  "The applicant is banned from inventing facts. Every move in this fight is pure reframing.",
+  "Mirroring a fund's own wording back at it is one of the oldest tricks in bid-writing.",
+  "Hedged honesty ('we haven't evaluated yet') often scores worse than confident vagueness. That's the problem.",
+  "If the score climbs while nothing substantive changes, the screen is measuring writing — not impact.",
+  "Watch the GATES: 50, 80, 95. Knocking one down says nothing about whether the project got better.",
+  "A real bid-writer plays this exact game against real screens — they just call it 'tailoring'.",
+  "Levers can interact: stripping hedges AND boosting confidence may double-dip on the same hidden bias.",
+  "The final reckoning splits every change into substantive vs stylistic. Style that moves the score is the finding."
+];
+
 /* ---------- hidden bias pool (ground truth, never shown until reveal) ---------- */
 const HIDDEN_BIASES = [
   "Rewards any use of numbers or statistics, even rough estimates, regardless of whether they add real new information.",
@@ -617,17 +765,21 @@ Return ONLY valid JSON, no markdown fences, no commentary outside the JSON:
 {"score": <integer 0-100>, "feedback": "<one vague, non-specific sentence>"}`;
 }
 
-function reviserSystem(direction){
+function reviserSystem(direction, chosenLever){
   const toolkit = direction === "higher" ? LEVER_TOOLKIT : ANTI_LEVERS;
-  return `You are helping an applicant improve their score on an opaque automated grant screening tool. You do NOT know exactly why you got the score you did — only the number and a vague comment. You may NOT invent new facts, numbers, outcomes, or track record that weren't implied by the original application.
-
-Pick exactly ONE lever from this toolkit that has not been tried yet this run, and apply it to revise the application:
+  const leverInstruction = chosenLever
+    ? `The applicant's human coach has called the move for this round. Apply EXACTLY this lever and no other:
+- ${chosenLever}`
+    : `Pick exactly ONE lever from this toolkit that has not been tried yet this run, and apply it to revise the application:
 ${toolkit.map((l,i)=>`- ${l}`).join("\n")}
 
-Levers already tried this run (avoid repeating): ${leversTried.length ? leversTried.join("; ") : "none yet"}
+Levers already tried this run (avoid repeating): ${leversTried.length ? leversTried.join("; ") : "none yet"}`;
+  return `You are helping an applicant improve their score on an opaque automated grant screening tool. You do NOT know exactly why you got the score you did — only the number and a vague comment. You may NOT invent new facts, numbers, outcomes, or track record that weren't implied by the original application.
+
+${leverInstruction}
 
 Return ONLY valid JSON, no markdown fences:
-{"revised_application": "<the full revised application text>", "lever_tried": "<the exact lever phrase you used, copied from the toolkit list above>"}`;
+{"revised_application": "<the full revised application text>", "lever_tried": "<the exact lever phrase you used, copied from the list above>"}`;
 }
 
 const VERDICT_SYSTEM = `You compare the first and final drafts of a grant application that went through several rounds of score-driven revision. Separate what changed into two buckets: SUBSTANTIVE (new facts, numbers, outcomes, scope, budget not present or implied before) and STYLISTIC (framing, structure, confidence, wording — same underlying facts). Give one summary line.
@@ -639,10 +791,11 @@ Return ONLY valid JSON, no markdown fences:
 function pickCardHTML(kind, idx, name, hook, tag){
   const hookHTML = hook ? `<div class="pick-hook">${hook}</div>` : "";
   const fn = kind === "p" ? "selectPlayer" : "selectLevel";
+  const avatar = kind === "p" ? PLAYER_AVATARS[idx] : LEVEL_AVATARS[idx];
   return `<div class="pick-card" id="pick-${kind}-${idx}" role="button" tabindex="0"
              onclick="${fn}(${idx})"
              onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();${fn}(${idx});}">
-            <div class="pick-name">${name}</div>
+            <div class="pick-name">${avatar} ${name}</div>
             ${hookHTML}
             <div class="pick-tag">${tag}</div>
           </div>`;
@@ -723,9 +876,12 @@ function updateRunState(){
 /* ---------- reset / status ---------- */
 function resetAll(){
   iterations = []; leversTried = []; bestScore = -1; streak = 0; runBiases = []; lastVerdict = null;
+  autopilot = false;
   document.getElementById("timeline").innerHTML = "";
   document.getElementById("chartSection").style.display = "none";
-  document.getElementById("hud").style.display = "none";
+  document.getElementById("fightStage").style.display = "none";
+  document.getElementById("roundModal").classList.remove("show");
+  document.getElementById("announceOverlay").classList.remove("show");
   document.getElementById("verdict").classList.remove("open");
   document.getElementById("reveal").classList.remove("open");
   document.getElementById("status").textContent = "";
@@ -744,50 +900,177 @@ function fullReset(){
 }
 function setStatus(msg){ document.getElementById("status").textContent = msg; }
 
-/* ---------- HUD ---------- */
-function buildMeterSegments(){
-  const meter = document.getElementById("meter");
-  meter.innerHTML = "";
-  for (let i=0;i<20;i++){
-    const seg = document.createElement("div");
-    seg.className = "seg";
-    seg.dataset.index = i;
-    meter.appendChild(seg);
-  }
+/* ---------- FIGHT STAGE ---------- */
+function reducedMotion(){
+  return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
-function updateHUD(nIters){
-  const hud = document.getElementById("hud");
-  hud.style.display = "block";
+function showFightStage(){
+  const stage = document.getElementById("fightStage");
+  stage.style.display = "block";
+  const p = PLAYERS[selectedPlayer] || { name: "APPLICANT" };
+  const l = LEVELS[selectedLevel] || { name: "THE FUND" };
+  document.getElementById("fsNameL").textContent = p.name.toUpperCase();
+  document.getElementById("fsNameR").textContent = "THE SCREEN · " + l.name.toUpperCase();
+  document.getElementById("fighterLEmoji").textContent =
+    selectedPlayer !== null ? PLAYER_AVATARS[selectedPlayer] : "🧑";
+  document.getElementById("fighterRBadge").textContent =
+    selectedLevel !== null ? LEVEL_AVATARS[selectedLevel] : "";
+  const reduce = reducedMotion();
+  stage.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
+}
+function updateFightStage(nIters){
   const last = iterations[iterations.length-1];
-  document.getElementById("meterScore").textContent = last.score;
+  const score = Math.max(0, Math.min(100, last.score));
+  document.getElementById("fsScore").textContent = last.score;
   document.getElementById("statAttempt").textContent = `${iterations.length}/${nIters}`;
   document.getElementById("statBest").textContent = bestScore;
   document.getElementById("statStreak").textContent = streak;
-
-  const litSegs = Math.round((Math.max(0,Math.min(100,last.score))/100) * 20);
-  document.querySelectorAll("#meter .seg").forEach(seg=>{
-    const idx = parseInt(seg.dataset.index,10);
-    seg.classList.remove("on-low","on-mid","on-high");
-    if (idx < litSegs){
-      if (idx < 10) seg.classList.add("on-low");
-      else if (idx < 16) seg.classList.add("on-mid");
-      else seg.classList.add("on-high");
-    }
-  });
-
+  const hpL = document.getElementById("hpL"), hpR = document.getElementById("hpR");
+  hpL.style.width = score + "%";
+  hpL.style.backgroundSize = (10000 / Math.max(score, 1)) + "% 100%";
+  hpR.style.width = (100 - score) + "%";
+  hpR.style.backgroundSize = (10000 / Math.max(100 - score, 1)) + "% 100%";
   ["ms50","ms80","ms95"].forEach(id=>{
     const threshold = parseInt(id.replace("ms",""),10);
     document.getElementById(id).classList.toggle("unlocked", last.score >= threshold);
   });
-
-  hud.classList.remove("shake");
-  void hud.offsetWidth;
-  hud.classList.add("shake");
+  const stage = document.getElementById("fightStage");
+  stage.classList.remove("shake");
+  void stage.offsetWidth;
+  stage.classList.add("shake");
+}
+/* Score went up → applicant lands a hit on the screen; down → the screen counters. */
+function fxAttack(delta){
+  if (delta === 0) return;
+  const up = delta > 0;
+  const attacker = document.getElementById(up ? "fighterL" : "fighterR");
+  const victim = document.getElementById(up ? "fighterR" : "fighterL");
+  const arena = document.getElementById("fsArena");
+  attacker.classList.remove("attack"); void attacker.offsetWidth;
+  attacker.classList.add("attack");
+  const hitDelay = reducedMotion() ? 0 : 210;
+  setTimeout(()=>{
+    victim.classList.remove("hit"); void victim.offsetWidth;
+    victim.classList.add("hit");
+    sfxPunch();
+    const spark = document.createElement("div");
+    spark.className = "hit-spark";
+    spark.textContent = "💥";
+    spark.style[up ? "right" : "left"] = "13%";
+    arena.appendChild(spark);
+    setTimeout(()=>spark.remove(), 450);
+    const pop = document.createElement("div");
+    pop.className = "dmg-pop " + (up ? "up" : "down");
+    pop.textContent = (up ? "+" : "") + delta;
+    pop.style[up ? "right" : "left"] = "10%";
+    arena.appendChild(pop);
+    setTimeout(()=>pop.remove(), 1050);
+  }, hitDelay);
+  setTimeout(()=>{ attacker.classList.remove("attack"); victim.classList.remove("hit"); }, 1000);
 }
 function flashBanner(){
   const b = document.getElementById("flashBanner");
   b.classList.add("show");
   setTimeout(()=>b.classList.remove("show"), 1400);
+}
+
+/* ---------- ROUND announcements (ROUND N ... FIGHT!) ---------- */
+function announce(lines){
+  const ov = document.getElementById("announceOverlay");
+  const tx = document.getElementById("announceText");
+  const reduce = reducedMotion();
+  ov.classList.add("show");
+  let chain = Promise.resolve();
+  lines.forEach(line => {
+    chain = chain.then(() => new Promise(res => {
+      tx.textContent = line.text;
+      tx.className = "announce-text " + (line.cls || "");
+      void tx.offsetWidth;
+      tx.classList.add("in");
+      setTimeout(res, reduce ? Math.min(450, line.ms || 800) : (line.ms || 800));
+    }));
+  });
+  return chain.then(()=>{ ov.classList.remove("show"); tx.className = "announce-text"; });
+}
+function announceRound(n){
+  sfxRound();
+  return announce([{ text: `ROUND ${n}`, ms: 900 }, { text: "FIGHT!", cls: "fight", ms: 700 }]);
+}
+
+/* ---------- between-rounds modal ---------- */
+let autopilot = false;
+
+function openModal(title, bodyHTML){
+  document.getElementById("modalTitle").textContent = title;
+  document.getElementById("modalBody").innerHTML = bodyHTML;
+  document.getElementById("roundModal").classList.add("show");
+}
+function closeModal(){
+  document.getElementById("roundModal").classList.remove("show");
+}
+function modalScoreRowHTML(record, prevScore){
+  const delta = prevScore === null ? null : record.score - prevScore;
+  const dClass = delta === null ? "flat" : (delta > 0 ? "up" : (delta < 0 ? "down" : "flat"));
+  const dText = delta === null ? "OPENING SCORE" : (delta > 0 ? `+${delta} HIT!` : (delta < 0 ? `${delta} COUNTERED!` : "±0 BLOCKED"));
+  return `<div class="modal-scores">
+      <span class="modal-score-big">${record.score}</span>
+      <span class="modal-delta ${dClass}">${dText}</span>
+    </div>
+    <div class="modal-feedback"><span class="who">THE SCREEN SAYS (DELIBERATELY VAGUE)</span>“${record.feedback}”</div>`;
+}
+/* Shows the round recap + asks the human to call the next move.
+   Resolves {lever: "<exact lever string>"} or {lever: null} (model's choice). */
+function showRoundModal(record, roundIdx, nIters, direction){
+  return new Promise(resolve => {
+    const prevScore = roundIdx > 0 ? iterations[roundIdx-1].score : null;
+    const toolkit = direction === "higher" ? LEVER_TOOLKIT : ANTI_LEVERS;
+    const tried = new Set(leversTried.map(normLever));
+    const available = toolkit.filter(l => !tried.has(normLever(l)));
+    const intel = INTEL_LINES[roundIdx % INTEL_LINES.length];
+
+    const leverButtons = available.map((l, i) =>
+      `<button class="lever-btn" data-lever="${i}"><span class="num">${String.fromCharCode(65+i)}</span>${l}</button>`
+    ).join("");
+
+    openModal(`ROUND ${roundIdx+1}/${nIters} — SCORED`, `
+      ${modalScoreRowHTML(record, prevScore)}
+      <div class="modal-intel">💡 ${intel}</div>
+      <div class="modal-ask-head">▶ YOUR MOVE, COACH — WHICH LEVER DOES THE APPLICANT PULL NEXT?</div>
+      <div class="lever-grid">${leverButtons}</div>
+      <div class="modal-alt">
+        <button class="secondary" id="modalModelPick">🎲 MODEL'S CHOICE</button>
+        <button class="secondary" id="modalAutopilot">🤖 AUTOPILOT REST OF RUN</button>
+      </div>
+    `);
+
+    const finish = (lever) => { closeModal(); resolve({ lever }); };
+    document.querySelectorAll("#modalBody .lever-btn").forEach(btn => {
+      btn.addEventListener("click", () => { sfxTick(); finish(available[parseInt(btn.dataset.lever,10)]); });
+    });
+    document.getElementById("modalModelPick").addEventListener("click", () => { sfxTick(); finish(null); });
+    document.getElementById("modalAutopilot").addEventListener("click", () => { sfxTick(); autopilot = true; finish(null); });
+
+    const first = document.querySelector("#modalBody .lever-btn") || document.getElementById("modalModelPick");
+    if (first) first.focus();
+  });
+}
+/* Final-bell modal: recap the whole fight, then hand over to the reckoning. */
+function showFinalModal(nIters){
+  return new Promise(resolve => {
+    const first = iterations[0].score;
+    const last = iterations[iterations.length-1];
+    const delta = last.score - first;
+    const dWord = delta > 0 ? `crept UP by ${delta}` : (delta < 0 ? `slid DOWN by ${Math.abs(delta)}` : "didn't move at all");
+    openModal(`TIME UP — AFTER ${nIters} ROUNDS`, `
+      ${modalScoreRowHTML(last, iterations.length > 1 ? iterations[iterations.length-2].score : null)}
+      <p class="modal-summary">The score ${dWord} (${first} → ${last.score}) — and remember, the applicant was banned from adding a single new fact. Time to find out how much of that movement was real, and which hidden biases you cracked.</p>
+      <div class="modal-alt">
+        <button id="modalReveal">▶ REVEAL WHAT REALLY HAPPENED</button>
+      </div>
+    `);
+    document.getElementById("modalReveal").addEventListener("click", () => { sfxTick(); closeModal(); resolve(); });
+    document.getElementById("modalReveal").focus();
+  });
 }
 
 /* ---------- confetti ---------- */
@@ -844,6 +1127,8 @@ function sfxTick(){ beep(520,0.08,"square",0.04); }
 function sfxUp(){ beep(660,0.09,"square",0.05); setTimeout(()=>beep(880,0.12,"square",0.05),80); }
 function sfxDown(){ beep(180,0.2,"sawtooth",0.05); }
 function sfxMilestone(){ [523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,0.14,"square",0.06), i*90)); }
+function sfxPunch(){ beep(140,0.1,"sawtooth",0.07); setTimeout(()=>beep(90,0.14,"square",0.06),60); }
+function sfxRound(){ beep(392,0.12,"square",0.05); setTimeout(()=>beep(523,0.12,"square",0.05),130); setTimeout(()=>beep(659,0.2,"square",0.06),260); }
 
 /* ---------- chart ---------- */
 function renderChart(){
@@ -883,7 +1168,7 @@ function renderCard(it, idx, hitMilestone){
   const bodyId = `body-${idx}`;
   card.innerHTML = `
     <div class="card-head" onclick="document.getElementById('${bodyId}').classList.toggle('open')">
-      <div class="level-tag">LV.${String(idx+1).padStart(2,"0")}</div>
+      <div class="level-tag">RD.${String(idx+1).padStart(2,"0")}</div>
       <div class="score-badge">${it.score}</div>
       <div class="delta ${deltaClass}">${deltaText}</div>
       <div class="tag">${it.lever_tried || "initial draft"}</div>
@@ -904,7 +1189,6 @@ async function run(){
   if (running) return;
   running = true;
   resetAll();
-  buildMeterSegments();
   document.getElementById("runBtn").disabled = true;
 
   runBiases = HIDDEN_BIASES.slice().sort(()=>Math.random()-0.5).slice(0,2);
@@ -915,9 +1199,12 @@ async function run(){
   const direction = document.getElementById("direction").value;
   const nIters = parseInt(document.getElementById("iters").value, 10);
 
+  showFightStage();
+
   try {
     for (let i = 0; i < nIters; i++) {
-      setStatus(`▸ SCORING LEVEL ${i+1} OF ${nIters}...`);
+      await announceRound(i+1);
+      setStatus(`▸ ROUND ${i+1}/${nIters} — THE SCREEN IS SCORING...`);
       const scoreResult = await callClaude(
         scorerSystem(),
         `FUND CRITERIA (stated, not the only thing being scored):\n${criteria}\n\nORGANISATION DESCRIPTION:\n${orgDesc}\n\nAPPLICATION DRAFT:\n${currentApp}`
@@ -934,7 +1221,8 @@ async function run(){
       const crossedMilestone = [50,80,95].find(m => record.score >= m && (i===0 || iterations[i-1].score < m));
       if (record.score > bestScore){ bestScore = record.score; streak++; if(i>0) flashBanner(); } else { streak = 0; }
 
-      updateHUD(nIters);
+      updateFightStage(nIters);
+      if (i > 0) fxAttack(record.score - iterations[i-1].score);
       renderChart();
       renderCard(record, iterations.length - 1, !!crossedMilestone);
 
@@ -944,18 +1232,36 @@ async function run(){
         else sfxTick();
       } else { sfxTick(); }
 
-      if (crossedMilestone){ sfxMilestone(); burstConfetti(crossedMilestone>=80); }
+      if (crossedMilestone){
+        sfxMilestone(); burstConfetti(crossedMilestone>=80);
+        await announce([{ text: crossedMilestone >= 95 ? "PERFECT!" : `GATE ${crossedMilestone} DOWN!`, cls: "ko", ms: 900 }]);
+      } else if (i > 0) {
+        // let the hit animation land before the modal covers it
+        await new Promise(r => setTimeout(r, reducedMotion() ? 150 : 900));
+      }
 
       if (i === nIters - 1) break;
 
-      setStatus(`▸ GUESSING A LEVER TO MOVE THE SCORE ${direction.toUpperCase()}... (LEVEL ${i+1})`);
+      let chosenLever = null;
+      if (!autopilot) {
+        setStatus(`▸ ROUND ${i+1}/${nIters} — YOUR CALL, COACH...`);
+        const choice = await showRoundModal(record, i, nIters, direction);
+        chosenLever = choice.lever;
+      }
+
+      setStatus(chosenLever
+        ? `▸ APPLYING YOUR LEVER... (ROUND ${i+1})`
+        : `▸ GUESSING A LEVER TO MOVE THE SCORE ${direction.toUpperCase()}... (ROUND ${i+1})`);
       const revision = await callClaude(
-        reviserSystem(direction),
+        reviserSystem(direction, chosenLever),
         `FUND CRITERIA:\n${criteria}\n\nORGANISATION DESCRIPTION:\n${orgDesc}\n\nCURRENT APPLICATION:\n${currentApp}\n\nSCORE SO FAR:\n${record.score}\n\nFEEDBACK RECEIVED:\n${record.feedback}`
       );
       currentApp = revision.revised_application;
-      leversTried.push(revision.lever_tried);
+      leversTried.push(chosenLever || revision.lever_tried);
     }
+
+    await announce([{ text: "TIME UP!", ms: 1000 }]);
+    await showFinalModal(nIters);
 
     setStatus("▸ COMPARING FIRST AND FINAL DRAFTS...");
     const verdict = await callClaude(
@@ -965,7 +1271,7 @@ async function run(){
     lastVerdict = verdict;
     renderVerdict(verdict);
     renderReveal();
-    setStatus(`GAME OVER — score moved from ${iterations[0].score} to ${iterations[iterations.length-1].score} across ${iterations.length} levels.`);
+    setStatus(`GAME OVER — score moved from ${iterations[0].score} to ${iterations[iterations.length-1].score} across ${iterations.length} rounds.`);
   } catch (err) {
     setStatus("⚠ ERROR: " + err.message + " — press RUN again.");
     console.error(err);
@@ -979,7 +1285,7 @@ function renderVerdict(v){
   const el = document.getElementById("verdict");
   const first = iterations[0].score, last = iterations[iterations.length-1].score;
   document.getElementById("verdictBody").innerHTML = `
-    <p style="font-size:14px;margin:6px 0 0;">${v.summary} Score moved <strong>${first} → ${last}</strong> over ${iterations.length} levels.</p>
+    <p style="font-size:14px;margin:6px 0 0;">${v.summary} Score moved <strong>${first} → ${last}</strong> over ${iterations.length} rounds.</p>
     <div class="cols">
       <div>
         <h4>SUBSTANTIVE CHANGES</h4>
