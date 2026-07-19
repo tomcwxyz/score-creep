@@ -24,7 +24,15 @@ Everything is fictional — no real funder, no real organisation, no real fundin
 2. **② Choose your level** — one of 8 funders, each with its own criteria.
 3. **③ Contenders ready** — the matchup appears: review and tweak the exact text both
    models will see, then press **RUN**.
-4. Watch the score creep level by level; read the **GAME OVER** reveal.
+4. **FIGHT!** — each round plays out on a Street-Fighter-style stage: the applicant and
+   the screening bot face off under two health bars (applicant bar = current score, the
+   screen's bar = what's left to crack). Score up → the applicant lands a hit; score
+   down → the screen counters.
+5. **Between rounds you're the coach** — a modal recaps the round (score, delta, the
+   screen's deliberately vague feedback, plus a bit of intel) and asks *you* which lever
+   the applicant pulls next. Or hand the choice to the model for one round, or hit
+   **AUTOPILOT** to let it drive the rest of the run.
+6. **TIME UP** — read the **GAME OVER** reveal.
 
 Scores are *not* monotonic — because each scoring call is an independent (slightly noisy)
 judgment and the applicant guesses levers blind, individual rounds can dip. The end

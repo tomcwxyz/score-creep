@@ -15,6 +15,16 @@ ship it — while staying single-file, no framework, no new deps.
       run nets the wrong way.
 - [x] Cost hint (~N Claude calls per run). RUN gated until both sides chosen.
 - [x] Verified all UI end-to-end in a headless browser with the API mocked (no spend).
+- [x] Street-Fighter rework: fight stage (two emoji fighters, skewed HP bars where
+      applicant bar = score and screen bar = 100−score, round counter, gates), "ROUND N…
+      FIGHT!" / "GATE DOWN" / "TIME UP" announcement overlays, lunge + hit-spark +
+      floating damage-number animations, punch/round-bell SFX.
+- [x] Between-rounds modal: recaps the round (score, delta, vague feedback, rotating
+      intel line) and asks the human to pick the next lever — with MODEL'S CHOICE and
+      AUTOPILOT escape hatches. Human-picked levers are passed to the reviser as a
+      "coach's call" it must apply exactly. Final TIME-UP modal hands over to the reveal.
+- [x] Re-verified end-to-end headless with the API mocked (coach pick, model pick,
+      autopilot, reveal all exercised; no spend).
 
 ## Deploy (owner: Tom)
 - [ ] `cp .env.example .env.local`, paste `ANTHROPIC_API_KEY`.
